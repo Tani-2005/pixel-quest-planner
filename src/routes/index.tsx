@@ -1,6 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState } from "react";
 import { PixelButton } from "@/components/PixelButton";
+import spriteFireball from "@/assets/sprite-fireball.png";
+import spriteCrystal from "@/assets/sprite-crystal.png";
+import spriteWhale from "@/assets/sprite-whale.png";
+import spriteGalaxy from "@/assets/sprite-galaxy.png";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -22,32 +27,67 @@ export const Route = createFileRoute("/")({
   component: Landing,
 });
 
-const FLOATERS = [
-  { emoji: "🥚", x: "8%", y: "20%", delay: 0, scale: 1 },
-  { emoji: "⚔️", x: "85%", y: "16%", delay: 0.4, scale: 0.9 },
-  { emoji: "🐉", x: "12%", y: "70%", delay: 0.8, scale: 1.1 },
-  { emoji: "💎", x: "82%", y: "62%", delay: 0.2, scale: 0.85 },
-  { emoji: "🍄", x: "50%", y: "8%", delay: 1.0, scale: 0.7 },
+const SPRITES = [spriteFireball, spriteCrystal, spriteWhale, spriteGalaxy];
+
+// Pre-placed slots across the page so sprites pop in different regions.
+// Avoid the central hero text column (roughly 30%–70% horizontally in the upper area).
+const SLOTS: Array<{ x: string; y: string; size: number }> = [
+  { x: "4%",  y: "12%", size: 56 },
+  { x: "88%", y: "10%", size: 48 },
+  { x: "10%", y: "38%", size: 64 },
+  { x: "84%", y: "32%", size: 56 },
+  { x: "6%",  y: "62%", size: 52 },
+  { x: "90%", y: "58%", size: 60 },
+  { x: "18%", y: "82%", size: 48 },
+  { x: "78%", y: "84%", size: 56 },
+  { x: "45%", y: "92%", size: 44 },
+  { x: "50%", y: "4%",  size: 40 },
 ];
 
-const ASCII = `
-  :xx;                                          M     M
-  XMM0                              :.MW         M
-                                    :MMW
-  OMMx   .MMM     XMMc  :MM@   .dXMMMMMK1   ,0.WMMMMW,
-  OMMx   .MMM     XMMc  :MM.  W .MN;  .cW.X  M:M.    '
-  OMMx   .MMM     XMM.  :MMW  OMMNKKKWKWMM:  lXMMWNKOo.
-  OMMx   .MMMc   :cMMc  :MMW  .MMN,.  ...M    .';dMM.W
-  OMMx   1WMMW.WMWMMc   :MMW   :XMMNK.NMN.   .N.N0O.NMW0
-  0MMd      ,clc, .::.   .::;     ..ccK:'      .'.clcM'
-  KKXMMX.                                              l   o
-  ;cl:'         .       ,                              M
-                  M       An Autonomous Quest          :
-                                  :
-                d                                       l
-`;
+type Floater = {
+  id: number;
+  src: string;
+  x: string;
+  y: string;
+  size: number;
+};
 
 function Landing() {
+  const [floaters, setFloaters] = useState<Floater[]>([]);
+
+  useEffect(() => {
+    let nextId = 0;
+    const occupied = new Set<number>();
+
+    const spawn = () => {
+      // pick a free slot
+      const free = SLOTS.map((_, i) => i).filter((i) => !occupied.has(i));
+      if (free.length === 0) return;
+      const slotIdx = free[Math.floor(Math.random() * free.length)];
+      const slot = SLOTS[slotIdx];
+      const src = SPRITES[Math.floor(Math.random() * SPRITES.length)];
+      const id = nextId++;
+      occupied.add(slotIdx);
+
+      setFloaters((prev) => [...prev, { id, src, x: slot.x, y: slot.y, size: slot.size }]);
+
+      // remove after a lifetime so it pops in then out
+      const lifetime = 2800 + Math.random() * 2200;
+      window.setTimeout(() => {
+        setFloaters((prev) => prev.filter((f) => f.id !== id));
+        occupied.delete(slotIdx);
+      }, lifetime);
+    };
+
+    // initial burst
+    for (let i = 0; i < 4; i++) {
+      window.setTimeout(spawn, i * 350);
+    }
+
+    const interval = window.setInterval(spawn, 1100);
+    return () => window.clearInterval(interval);
+  }, []);
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-background pixel-grid-bg">
       {/* Top nav */}
@@ -70,41 +110,39 @@ function Landing() {
         </div>
       </header>
 
-      {/* Floating sprites */}
-      {FLOATERS.map((f, i) => (
-        <div
-          key={i}
-          className={i % 2 === 0 ? "animate-float-bob" : "animate-float-bob-slow"}
-          style={{
-            position: "absolute",
-            left: f.x,
-            top: f.y,
-            fontSize: `${2.5 * f.scale}rem`,
-            animationDelay: `${f.delay}s`,
-            opacity: 0.85,
-            zIndex: 1,
-          }}
-        >
-          {f.emoji}
-        </div>
-      ))}
+      {/* Pop-in / pop-out pixel-art sprites scattered around the page */}
+      <AnimatePresence>
+        {floaters.map((f) => (
+          <motion.img
+            key={f.id}
+            src={f.src}
+            alt=""
+            aria-hidden="true"
+            initial={{ opacity: 0, scale: 0.4 }}
+            animate={{ opacity: 0.9, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.4 }}
+            transition={{ duration: 0.45, ease: "easeOut" }}
+            style={{
+              position: "absolute",
+              left: f.x,
+              top: f.y,
+              width: f.size,
+              height: f.size,
+              imageRendering: "pixelated",
+              zIndex: 1,
+              pointerEvents: "none",
+            }}
+          />
+        ))}
+      </AnimatePresence>
 
       {/* Hero */}
-      <section className="relative z-10 max-w-5xl mx-auto px-6 pt-12 md:pt-20 pb-24 text-center">
-        <motion.pre
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.55 }}
-          transition={{ duration: 1.2 }}
-          className="hidden md:block font-pixel text-[8px] leading-[1.1] text-pixel-pink whitespace-pre mx-auto select-none"
-        >
-          {ASCII}
-        </motion.pre>
-
+      <section className="relative z-10 max-w-5xl mx-auto px-6 pt-16 md:pt-24 pb-24 text-center">
         <motion.h1
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="font-pixel text-3xl sm:text-5xl md:text-6xl text-pixel-cyan text-shadow-pixel mt-6"
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="font-pixel text-3xl sm:text-5xl md:text-6xl text-pixel-cyan text-shadow-pixel"
         >
           PixelQuest
         </motion.h1>
@@ -112,7 +150,7 @@ function Landing() {
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
+          transition={{ delay: 0.4 }}
           className="font-pixel text-[10px] sm:text-xs text-muted-foreground mt-6 max-w-xl mx-auto"
         >
           A Gamified Student Planner<span className="animate-blink">_</span>
@@ -121,7 +159,7 @@ function Landing() {
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
+          transition={{ delay: 0.6 }}
           className="font-sans text-base sm:text-lg text-foreground/80 mt-8 max-w-2xl mx-auto leading-relaxed"
         >
           Turn homework into quests. Earn XP, evolve your pixel pet, keep your streak alive,
@@ -131,7 +169,7 @@ function Landing() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.9 }}
+          transition={{ delay: 0.8 }}
           className="mt-12 flex flex-wrap items-center justify-center gap-4"
         >
           <Link to="/signup">
