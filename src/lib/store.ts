@@ -116,7 +116,10 @@ interface State {
   login: (username: string) => void;
   logout: () => void;
   addTask: (
-    t: Omit<Task, "id" | "status" | "completed_at" | "created_at" | "xp_reward" | "order"> & {
+    t: Omit<
+      Task,
+      "id" | "status" | "completed_at" | "created_at" | "xp_reward" | "order" | "recurrence"
+    > & {
       xp_reward?: number;
       recurrence?: Recurrence;
     },
