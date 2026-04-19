@@ -1,15 +1,31 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { HUD } from "@/components/HUD";
-import { TaskCard } from "@/components/TaskCard";
 import { PixelButton } from "@/components/PixelButton";
-import { ToastStack, ToastItem } from "@/components/PixelToast";
+import { ToastStack } from "@/components/PixelToast";
 import { LevelUpOverlay } from "@/components/LevelUpOverlay";
-import { useGame, BADGES, Priority, TaskType, XP_BY_PRIORITY } from "@/lib/store";
+import { CompletionBurst } from "@/components/CompletionBurst";
+import { EmptyState } from "@/components/EmptyState";
+import { TasksSortableList } from "@/components/TasksSortableList";
+import { TasksWeekGrid } from "@/components/TasksWeekGrid";
+import { SubjectTag } from "@/components/SubjectTag";
+import {
+  useGame,
+  Priority,
+  Recurrence,
+  TaskType,
+  XP_BY_PRIORITY,
+} from "@/lib/store";
+import { useGameFeedback } from "@/hooks/useGameFeedback";
 import { AnimatePresence, motion } from "framer-motion";
 
 export const Route = createFileRoute("/tasks")({
-  head: () => ({ meta: [{ title: "Tasks — PixelQuest" }] }),
+  head: () => ({
+    meta: [
+      { title: "Quest Log — PixelQuest" },
+      { name: "description", content: "Manage your quests, reorder them, and track recurring missions." },
+    ],
+  }),
   beforeLoad: () => {
     if (typeof window !== "undefined") {
       const raw = localStorage.getItem("pixelquest-store");
@@ -25,55 +41,43 @@ export const Route = createFileRoute("/tasks")({
 const TYPES: ("All" | TaskType)[] = ["All", "Homework", "Exam", "Project", "Club Task", "Personal"];
 
 function TasksPage() {
-  const { tasks, completeTask, addTask } = useGame();
+  const { tasks, completeTask, addTask, reorderTasks } = useGame();
   const [filter, setFilter] = useState<"All" | TaskType>("All");
+  const [subjectFilter, setSubjectFilter] = useState<string | null>(null);
+  const [view, setView] = useState<"list" | "week">("list");
   const [drawer, setDrawer] = useState(false);
-  const [toasts, setToasts] = useState<ToastItem[]>([]);
-  const [levelUp, setLevelUp] = useState<{ open: boolean; level: number }>({
-    open: false,
-    level: 1,
-  });
+  const fb = useGameFeedback();
+
+  const subjects = useMemo(() => {
+    return Array.from(new Set(tasks.map((t) => t.subject))).filter(Boolean);
+  }, [tasks]);
 
   const filtered = useMemo(() => {
-    const list = filter === "All" ? tasks : tasks.filter((t) => t.type === filter);
+    let list = filter === "All" ? tasks : tasks.filter((t) => t.type === filter);
+    if (subjectFilter) list = list.filter((t) => t.subject === subjectFilter);
     return [...list].sort((a, b) => {
       if (a.status === "Done" && b.status !== "Done") return 1;
       if (b.status === "Done" && a.status !== "Done") return -1;
+      // honor manual order first, then due date
+      const orderDiff = (a.order ?? 0) - (b.order ?? 0);
+      if (orderDiff !== 0) return orderDiff;
       return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
     });
-  }, [tasks, filter]);
+  }, [tasks, filter, subjectFilter]);
 
-  const pushToast = (t: ToastItem) => {
-    setToasts((s) => [...s, t]);
-    setTimeout(() => setToasts((s) => s.filter((x) => x.id !== t.id)), 2200);
-  };
-
-  const handleComplete = (id: string) => {
-    const result = completeTask(id);
-    if (!result) return;
-    pushToast({ id: crypto.randomUUID(), message: `+${result.gainedXp} XP ⚡`, variant: "xp" });
-    if (result.leveledUp) {
-      setLevelUp({ open: true, level: result.newLevel });
-    }
-    result.newBadges.forEach((key) => {
-      const meta = BADGES.find((b) => b.key === key);
-      if (!meta) return;
-      pushToast({
-        id: crypto.randomUUID(),
-        message: `🏅 BADGE UNLOCKED: ${meta.name}`,
-        variant: "badge",
-      });
-    });
+  const handleComplete = (id: string, anchor: { x: number; y: number }) => {
+    fb.handleResult(completeTask(id), anchor);
   };
 
   return (
     <div className="min-h-screen bg-background pixel-grid-bg pb-20 md:pb-8">
       <HUD />
-      <ToastStack items={toasts} />
+      <ToastStack items={fb.toasts} />
+      <CompletionBurst events={fb.bursts} />
       <LevelUpOverlay
-        open={levelUp.open}
-        level={levelUp.level}
-        onClose={() => setLevelUp({ open: false, level: levelUp.level })}
+        open={fb.levelUp.open}
+        level={fb.levelUp.level}
+        onClose={() => fb.setLevelUp({ open: false, level: fb.levelUp.level })}
       />
 
       <main className="max-w-6xl mx-auto px-4 md:px-6 py-8">
@@ -81,16 +85,36 @@ function TasksPage() {
           <div>
             <h1 className="font-pixel text-base md:text-lg text-pixel-cyan">Quest Log</h1>
             <p className="font-pixel text-[8px] text-muted-foreground mt-2">
-              Complete missions to earn XP
+              Drag to reorder · Recurring quests respawn on completion
             </p>
           </div>
-          <PixelButton variant="accent" onClick={() => setDrawer(true)}>
-            + New Quest
-          </PixelButton>
+          <div className="flex items-center gap-2">
+            <div className="flex border-2 border-pixel-purple">
+              <button
+                onClick={() => setView("list")}
+                className={`font-pixel text-[8px] px-3 py-2 ${
+                  view === "list" ? "bg-pixel-purple text-white" : "text-muted-foreground"
+                }`}
+              >
+                List
+              </button>
+              <button
+                onClick={() => setView("week")}
+                className={`font-pixel text-[8px] px-3 py-2 ${
+                  view === "week" ? "bg-pixel-purple text-white" : "text-muted-foreground"
+                }`}
+              >
+                Week
+              </button>
+            </div>
+            <PixelButton variant="accent" onClick={() => setDrawer(true)}>
+              + New Quest
+            </PixelButton>
+          </div>
         </div>
 
-        {/* filters */}
-        <div className="flex flex-wrap gap-2 mb-6">
+        {/* type filters */}
+        <div className="flex flex-wrap gap-2 mb-3">
           {TYPES.map((t) => (
             <button
               key={t}
@@ -106,19 +130,51 @@ function TasksPage() {
           ))}
         </div>
 
-        {filtered.length === 0 ? (
-          <div className="bg-pixel-surface border-2 border-pixel-purple shadow-pixel p-12 text-center">
-            <div className="text-5xl mb-4">🗺️</div>
-            <p className="font-pixel text-xs text-muted-foreground">
-              No quests found, hero. Add your first mission!
-            </p>
-          </div>
-        ) : (
-          <div className="grid md:grid-cols-2 gap-4">
-            {filtered.map((t) => (
-              <TaskCard key={t.id} task={t} onComplete={handleComplete} />
+        {/* subject chips */}
+        {subjects.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 mb-6">
+            <span className="font-pixel text-[8px] text-muted-foreground mr-1">Subject:</span>
+            <button
+              onClick={() => setSubjectFilter(null)}
+              className={`font-pixel text-[8px] px-2 py-1 border ${
+                subjectFilter === null
+                  ? "bg-pixel-purple text-white border-pixel-pink"
+                  : "border-pixel-purple text-muted-foreground"
+              }`}
+            >
+              All
+            </button>
+            {subjects.map((s) => (
+              <button
+                key={s}
+                onClick={() => setSubjectFilter(subjectFilter === s ? null : s)}
+                className={subjectFilter === s ? "ring-2 ring-pixel-pink" : ""}
+              >
+                <SubjectTag subject={s} />
+              </button>
             ))}
           </div>
+        )}
+
+        {filtered.length === 0 ? (
+          <EmptyState
+            emoji="🗺️"
+            title="No quests found"
+            message="Your quest log is empty. Add a mission to start earning XP."
+            cta={
+              <PixelButton variant="accent" onClick={() => setDrawer(true)}>
+                + New Quest
+              </PixelButton>
+            }
+          />
+        ) : view === "list" ? (
+          <TasksSortableList
+            tasks={filtered}
+            onComplete={handleComplete}
+            onReorder={reorderTasks}
+          />
+        ) : (
+          <TasksWeekGrid tasks={filtered} onComplete={handleComplete} />
         )}
       </main>
 
@@ -140,6 +196,7 @@ function NewTaskDrawer({
   const [subject, setSubject] = useState("");
   const [type, setType] = useState<TaskType>("Homework");
   const [priority, setPriority] = useState<Priority>("Medium");
+  const [recurrence, setRecurrence] = useState<Recurrence>("none");
   const [due, setDue] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
@@ -156,9 +213,11 @@ function NewTaskDrawer({
       priority,
       due_date: new Date(due).toISOString(),
       xp_reward: XP_BY_PRIORITY[priority],
+      recurrence,
     });
     setTitle("");
     setSubject("");
+    setRecurrence("none");
     onClose();
   };
 
@@ -226,6 +285,26 @@ function NewTaskDrawer({
                     >
                       {p}
                       <div className="text-[7px] mt-1 opacity-70">+{XP_BY_PRIORITY[p]} XP</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div className="font-pixel text-[8px] text-pixel-cyan mb-2">Recurrence</div>
+                <div className="grid grid-cols-3 gap-2">
+                  {(["none", "daily", "weekly"] as Recurrence[]).map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setRecurrence(r)}
+                      className={`font-pixel text-[8px] py-3 border-2 ${
+                        recurrence === r
+                          ? "bg-pixel-green text-[oklch(0.18_0.08_295)] border-pixel-purple"
+                          : "border-pixel-purple text-muted-foreground"
+                      }`}
+                    >
+                      {r === "none" ? "One-off" : `↻ ${r}`}
                     </button>
                   ))}
                 </div>
