@@ -16,6 +16,8 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as BadgesRouteImport } from './routes/badges'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as StudySoloRouteImport } from './routes/study.solo'
+import { Route as StudyRoomRoomIdRouteImport } from './routes/study.room.$roomId'
 
 const TasksRoute = TasksRouteImport.update({
   id: '/tasks',
@@ -52,6 +54,16 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StudySoloRoute = StudySoloRouteImport.update({
+  id: '/solo',
+  path: '/solo',
+  getParentRoute: () => StudyRoute,
+} as any)
+const StudyRoomRoomIdRoute = StudyRoomRoomIdRouteImport.update({
+  id: '/room/$roomId',
+  path: '/room/$roomId',
+  getParentRoute: () => StudyRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -59,8 +71,10 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
-  '/study': typeof StudyRoute
+  '/study': typeof StudyRouteWithChildren
   '/tasks': typeof TasksRoute
+  '/study/solo': typeof StudySoloRoute
+  '/study/room/$roomId': typeof StudyRoomRoomIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -68,8 +82,10 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
-  '/study': typeof StudyRoute
+  '/study': typeof StudyRouteWithChildren
   '/tasks': typeof TasksRoute
+  '/study/solo': typeof StudySoloRoute
+  '/study/room/$roomId': typeof StudyRoomRoomIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -78,8 +94,10 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
-  '/study': typeof StudyRoute
+  '/study': typeof StudyRouteWithChildren
   '/tasks': typeof TasksRoute
+  '/study/solo': typeof StudySoloRoute
+  '/study/room/$roomId': typeof StudyRoomRoomIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +109,8 @@ export interface FileRouteTypes {
     | '/signup'
     | '/study'
     | '/tasks'
+    | '/study/solo'
+    | '/study/room/$roomId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +120,8 @@ export interface FileRouteTypes {
     | '/signup'
     | '/study'
     | '/tasks'
+    | '/study/solo'
+    | '/study/room/$roomId'
   id:
     | '__root__'
     | '/'
@@ -109,6 +131,8 @@ export interface FileRouteTypes {
     | '/signup'
     | '/study'
     | '/tasks'
+    | '/study/solo'
+    | '/study/room/$roomId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -117,7 +141,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
-  StudyRoute: typeof StudyRoute
+  StudyRoute: typeof StudyRouteWithChildren
   TasksRoute: typeof TasksRoute
 }
 
@@ -172,8 +196,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/study/solo': {
+      id: '/study/solo'
+      path: '/solo'
+      fullPath: '/study/solo'
+      preLoaderRoute: typeof StudySoloRouteImport
+      parentRoute: typeof StudyRoute
+    }
+    '/study/room/$roomId': {
+      id: '/study/room/$roomId'
+      path: '/room/$roomId'
+      fullPath: '/study/room/$roomId'
+      preLoaderRoute: typeof StudyRoomRoomIdRouteImport
+      parentRoute: typeof StudyRoute
+    }
   }
 }
+
+interface StudyRouteChildren {
+  StudySoloRoute: typeof StudySoloRoute
+  StudyRoomRoomIdRoute: typeof StudyRoomRoomIdRoute
+}
+
+const StudyRouteChildren: StudyRouteChildren = {
+  StudySoloRoute: StudySoloRoute,
+  StudyRoomRoomIdRoute: StudyRoomRoomIdRoute,
+}
+
+const StudyRouteWithChildren = StudyRoute._addFileChildren(StudyRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -181,7 +231,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
-  StudyRoute: StudyRoute,
+  StudyRoute: StudyRouteWithChildren,
   TasksRoute: TasksRoute,
 }
 export const routeTree = rootRouteImport

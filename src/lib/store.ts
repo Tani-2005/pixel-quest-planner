@@ -4,6 +4,7 @@ import { persist } from "zustand/middleware";
 export type Priority = "High" | "Medium" | "Low";
 export type TaskType = "Homework" | "Exam" | "Project" | "Club Task" | "Personal";
 export type TaskStatus = "To Do" | "In Progress" | "Done";
+export type Recurrence = "none" | "daily" | "weekly";
 
 export interface Task {
   id: string;
@@ -16,6 +17,8 @@ export interface Task {
   xp_reward: number;
   completed_at: string | null;
   created_at: string;
+  recurrence: Recurrence;
+  order: number;
 }
 
 export interface BadgeUnlock {
@@ -31,6 +34,26 @@ export interface User {
   level: number;
   streak_count: number;
   last_active_date: string | null;
+  daily_xp_goal: number;
+}
+
+export interface StudySession {
+  id: string;
+  started_at: string;
+  ended_at: string;
+  minutes: number;
+  xp_gained: number;
+  room_id: string | null;
+}
+
+export interface Room {
+  id: string;
+  name: string;
+  subject: string;
+  emoji: string;
+  members: { name: string; emoji: string; status: "focused" | "break" | "idle" }[];
+  active_timer_started_at: string | null;
+  active_timer_minutes: number;
 }
 
 export const XP_BY_PRIORITY: Record<Priority, number> = {
@@ -48,7 +71,7 @@ export const BADGES = [
   { key: "boss_mode", emoji: "👾", name: "Boss Mode", desc: "Reach Level 10" },
   { key: "legend", emoji: "🏆", name: "Legend", desc: "Reach Level 20" },
   { key: "study_squad", emoji: "🧑‍💻", name: "Study Squad", desc: "Join a Study Room" },
-  { key: "focus_master", emoji: "🧘", name: "Focus Master", desc: "60+ min in a room" },
+  { key: "focus_master", emoji: "🧘", name: "Focus Master", desc: "60+ min in focus" },
 ] as const;
 
 export function levelFromXp(xp: number) {
@@ -56,25 +79,103 @@ export function levelFromXp(xp: number) {
 }
 
 export function petStage(level: number) {
-  if (level >= 20) return { emoji: "🐉", name: "Dragon", stage: "Legendary", min: 20, next: 999 };
-  if (level >= 10) return { emoji: "🐱", name: "Familiar", stage: "Bonded", min: 10, next: 20 };
-  if (level >= 5) return { emoji: "🐣", name: "Hatchling", stage: "Awakened", min: 5, next: 10 };
-  return { emoji: "🥚", name: "Egg", stage: "Dormant", min: 1, next: 5 };
+  if (level >= 20) return { emoji: "🐉", name: "Dragon", stage: "Legendary", min: 20, next: 999, nextEmoji: "✨" };
+  if (level >= 10) return { emoji: "🐱", name: "Familiar", stage: "Bonded", min: 10, next: 20, nextEmoji: "🐉" };
+  if (level >= 5) return { emoji: "🐣", name: "Hatchling", stage: "Awakened", min: 5, next: 10, nextEmoji: "🐱" };
+  return { emoji: "🥚", name: "Egg", stage: "Dormant", min: 1, next: 5, nextEmoji: "🐣" };
 }
+
+// Deterministic subject color from a fixed palette token
+const SUBJECT_TOKENS = [
+  "pixel-cyan",
+  "pixel-pink",
+  "pixel-gold",
+  "pixel-green",
+  "pixel-purple",
+  "pixel-red",
+] as const;
+
+export function subjectColor(subject: string): (typeof SUBJECT_TOKENS)[number] {
+  if (!subject) return "pixel-purple";
+  let h = 0;
+  for (let i = 0; i < subject.length; i++) h = (h * 31 + subject.charCodeAt(i)) >>> 0;
+  return SUBJECT_TOKENS[h % SUBJECT_TOKENS.length];
+}
+
+const todayKey = (d = new Date()) => d.toISOString().slice(0, 10);
 
 interface State {
   authed: boolean;
   user: User;
   tasks: Task[];
   badges: BadgeUnlock[];
+  xp_log: Record<string, number>; // date (YYYY-MM-DD) -> xp earned
+  sessions: StudySession[];
+  rooms: Room[];
   // actions
   login: (username: string) => void;
   logout: () => void;
-  addTask: (t: Omit<Task, "id" | "status" | "completed_at" | "created_at" | "xp_reward"> & { xp_reward?: number }) => void;
-  completeTask: (id: string) => { gainedXp: number; leveledUp: boolean; newLevel: number; newBadges: string[] } | null;
+  addTask: (
+    t: Omit<
+      Task,
+      "id" | "status" | "completed_at" | "created_at" | "xp_reward" | "order" | "recurrence"
+    > & {
+      xp_reward?: number;
+      recurrence?: Recurrence;
+    },
+  ) => void;
+  completeTask: (
+    id: string,
+  ) => { gainedXp: number; leveledUp: boolean; newLevel: number; newBadges: string[] } | null;
+  reorderTasks: (orderedIds: string[]) => void;
   unlockBadgeIfNeeded: (key: string) => boolean;
+  setDailyGoal: (xp: number) => void;
+  logStudySession: (minutes: number, roomId: string | null) => { xp: number; newBadges: string[] };
+  joinRoom: (roomId: string) => { newBadges: string[] };
   resetDemo: () => void;
 }
+
+const seedRooms = (): Room[] => [
+  {
+    id: "math-cram",
+    name: "Math Cram",
+    subject: "MATH 210",
+    emoji: "📐",
+    members: [
+      { name: "Aria", emoji: "🦊", status: "focused" },
+      { name: "Kenji", emoji: "🐼", status: "focused" },
+      { name: "Lin", emoji: "🦉", status: "break" },
+    ],
+    active_timer_started_at: null,
+    active_timer_minutes: 25,
+  },
+  {
+    id: "late-coders",
+    name: "Late Night Coders",
+    subject: "CS 240",
+    emoji: "💻",
+    members: [
+      { name: "Sam", emoji: "🐸", status: "focused" },
+      { name: "Ria", emoji: "🐰", status: "focused" },
+    ],
+    active_timer_started_at: null,
+    active_timer_minutes: 50,
+  },
+  {
+    id: "lit-circle",
+    name: "Lit Circle",
+    subject: "ENG 110",
+    emoji: "📖",
+    members: [
+      { name: "Mira", emoji: "🐧", status: "idle" },
+      { name: "Theo", emoji: "🦝", status: "focused" },
+      { name: "Yuki", emoji: "🐯", status: "focused" },
+      { name: "Jay", emoji: "🐨", status: "break" },
+    ],
+    active_timer_started_at: null,
+    active_timer_minutes: 25,
+  },
+];
 
 const seedTasks = (): Task[] => {
   const now = new Date();
@@ -91,6 +192,8 @@ const seedTasks = (): Task[] => {
       xp_reward: 20,
       completed_at: null,
       created_at: now.toISOString(),
+      recurrence: "none",
+      order: 0,
     },
     {
       id: crypto.randomUUID(),
@@ -103,6 +206,8 @@ const seedTasks = (): Task[] => {
       xp_reward: 30,
       completed_at: null,
       created_at: now.toISOString(),
+      recurrence: "none",
+      order: 1,
     },
     {
       id: crypto.randomUUID(),
@@ -115,25 +220,33 @@ const seedTasks = (): Task[] => {
       xp_reward: 10,
       completed_at: null,
       created_at: now.toISOString(),
+      recurrence: "none",
+      order: 2,
     },
   ];
+};
+
+const initialUser: User = {
+  username: "Player",
+  avatar_emoji: "🧙",
+  total_xp: 0,
+  weekly_xp: 0,
+  level: 1,
+  streak_count: 0,
+  last_active_date: null,
+  daily_xp_goal: 50,
 };
 
 export const useGame = create<State>()(
   persist(
     (set, get) => ({
       authed: false,
-      user: {
-        username: "Player",
-        avatar_emoji: "🧙",
-        total_xp: 0,
-        weekly_xp: 0,
-        level: 1,
-        streak_count: 0,
-        last_active_date: null,
-      },
+      user: initialUser,
       tasks: [],
       badges: [],
+      xp_log: {},
+      sessions: [],
+      rooms: seedRooms(),
 
       login: (username) => {
         const existing = get().tasks;
@@ -141,34 +254,53 @@ export const useGame = create<State>()(
           authed: true,
           user: { ...get().user, username: username || "Player" },
           tasks: existing.length ? existing : seedTasks(),
+          rooms: get().rooms.length ? get().rooms : seedRooms(),
         });
       },
       logout: () => set({ authed: false }),
 
       addTask: (t) =>
-        set((s) => ({
-          tasks: [
-            {
-              id: crypto.randomUUID(),
-              title: t.title,
-              type: t.type,
-              subject: t.subject,
-              due_date: t.due_date,
-              priority: t.priority,
-              status: "To Do",
-              xp_reward: t.xp_reward ?? XP_BY_PRIORITY[t.priority],
-              completed_at: null,
-              created_at: new Date().toISOString(),
-            },
-            ...s.tasks,
-          ],
-        })),
+        set((s) => {
+          const maxOrder = s.tasks.reduce((m, x) => Math.max(m, x.order ?? 0), -1);
+          return {
+            tasks: [
+              {
+                id: crypto.randomUUID(),
+                title: t.title,
+                type: t.type,
+                subject: t.subject,
+                due_date: t.due_date,
+                priority: t.priority,
+                status: "To Do",
+                xp_reward: t.xp_reward ?? XP_BY_PRIORITY[t.priority],
+                completed_at: null,
+                created_at: new Date().toISOString(),
+                recurrence: t.recurrence ?? "none",
+                order: maxOrder + 1,
+              },
+              ...s.tasks,
+            ],
+          };
+        }),
+
+      reorderTasks: (orderedIds) =>
+        set((s) => {
+          const indexMap = new Map(orderedIds.map((id, i) => [id, i]));
+          return {
+            tasks: s.tasks.map((t) =>
+              indexMap.has(t.id) ? { ...t, order: indexMap.get(t.id)! } : t,
+            ),
+          };
+        }),
 
       unlockBadgeIfNeeded: (key) => {
         if (get().badges.find((b) => b.key === key)) return false;
         set((s) => ({ badges: [...s.badges, { key, unlocked_at: new Date().toISOString() }] }));
         return true;
       },
+
+      setDailyGoal: (xp) =>
+        set((s) => ({ user: { ...s.user, daily_xp_goal: Math.max(10, Math.min(500, xp)) } })),
 
       completeTask: (id) => {
         const task = get().tasks.find((t) => t.id === id);
@@ -185,23 +317,44 @@ export const useGame = create<State>()(
         const newWeekly = get().user.weekly_xp + gained;
         const newLevel = levelFromXp(newTotal);
 
-        // streak
-        const today = now.toISOString().slice(0, 10);
+        const today = todayKey(now);
         const last = get().user.last_active_date;
         let streak = get().user.streak_count;
         if (last !== today) {
           if (last) {
-            const yesterday = new Date(now.getTime() - 86400000).toISOString().slice(0, 10);
+            const yesterday = todayKey(new Date(now.getTime() - 86400000));
             streak = last === yesterday ? streak + 1 : 1;
           } else {
             streak = 1;
           }
         }
 
+        // recurrence: spawn next instance
+        let extraTasks: Task[] = [];
+        if (task.recurrence !== "none") {
+          const days = task.recurrence === "daily" ? 1 : 7;
+          const nextDue = new Date(due.getTime() + days * 86400000).toISOString();
+          const maxOrder = get().tasks.reduce((m, x) => Math.max(m, x.order ?? 0), -1);
+          extraTasks = [
+            {
+              ...task,
+              id: crypto.randomUUID(),
+              status: "To Do",
+              completed_at: null,
+              created_at: now.toISOString(),
+              due_date: nextDue,
+              order: maxOrder + 1,
+            },
+          ];
+        }
+
         set((s) => ({
-          tasks: s.tasks.map((t) =>
-            t.id === id ? { ...t, status: "Done", completed_at: now.toISOString() } : t,
-          ),
+          tasks: [
+            ...s.tasks.map((t) =>
+              t.id === id ? { ...t, status: "Done" as TaskStatus, completed_at: now.toISOString() } : t,
+            ),
+            ...extraTasks,
+          ],
           user: {
             ...s.user,
             total_xp: newTotal,
@@ -210,9 +363,9 @@ export const useGame = create<State>()(
             streak_count: streak,
             last_active_date: today,
           },
+          xp_log: { ...s.xp_log, [today]: (s.xp_log[today] ?? 0) + gained },
         }));
 
-        // badge checks
         const completedCount = get().tasks.filter((t) => t.status === "Done").length;
         const newBadges: string[] = [];
         const tryUnlock = (k: string) => {
@@ -235,22 +388,75 @@ export const useGame = create<State>()(
         };
       },
 
+      logStudySession: (minutes, roomId) => {
+        const xp = Math.max(5, Math.floor(minutes) * 1); // 1 XP per minute, min 5
+        const now = new Date();
+        const startedAt = new Date(now.getTime() - minutes * 60000).toISOString();
+        const today = todayKey(now);
+
+        set((s) => ({
+          sessions: [
+            { id: crypto.randomUUID(), started_at: startedAt, ended_at: now.toISOString(), minutes, xp_gained: xp, room_id: roomId },
+            ...s.sessions,
+          ],
+          user: {
+            ...s.user,
+            total_xp: s.user.total_xp + xp,
+            weekly_xp: s.user.weekly_xp + xp,
+            level: levelFromXp(s.user.total_xp + xp),
+            last_active_date: today,
+          },
+          xp_log: { ...s.xp_log, [today]: (s.xp_log[today] ?? 0) + xp },
+        }));
+
+        const totalFocusMin = get().sessions.reduce((sum, x) => sum + x.minutes, 0);
+        const newBadges: string[] = [];
+        const tryUnlock = (k: string) => {
+          if (get().unlockBadgeIfNeeded(k)) newBadges.push(k);
+        };
+        if (totalFocusMin >= 60) tryUnlock("focus_master");
+
+        return { xp, newBadges };
+      },
+
+      joinRoom: (_roomId) => {
+        const newBadges: string[] = [];
+        if (get().unlockBadgeIfNeeded("study_squad")) newBadges.push("study_squad");
+        return { newBadges };
+      },
+
       resetDemo: () =>
         set({
           authed: false,
-          user: {
-            username: "Player",
-            avatar_emoji: "🧙",
-            total_xp: 0,
-            weekly_xp: 0,
-            level: 1,
-            streak_count: 0,
-            last_active_date: null,
-          },
+          user: initialUser,
           tasks: [],
           badges: [],
+          xp_log: {},
+          sessions: [],
+          rooms: seedRooms(),
         }),
     }),
-    { name: "pixelquest-store" },
+    {
+      name: "pixelquest-store",
+      version: 2,
+      migrate: (persisted: unknown, version) => {
+        const p = (persisted ?? {}) as Partial<State>;
+        if (version < 2) {
+          return {
+            ...p,
+            user: { ...initialUser, ...(p.user ?? {}) },
+            tasks: (p.tasks ?? []).map((t, i) => ({
+              ...t,
+              recurrence: (t as Task).recurrence ?? "none",
+              order: (t as Task).order ?? i,
+            })),
+            xp_log: p.xp_log ?? {},
+            sessions: p.sessions ?? [],
+            rooms: p.rooms?.length ? p.rooms : seedRooms(),
+          } as State;
+        }
+        return p as State;
+      },
+    },
   ),
 );
