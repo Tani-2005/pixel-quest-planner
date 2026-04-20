@@ -142,10 +142,11 @@ interface State {
   addTask: (
     t: Omit<
       Task,
-      "id" | "status" | "completed_at" | "created_at" | "xp_reward" | "order" | "recurrence"
+      "id" | "status" | "completed_at" | "created_at" | "xp_reward" | "order" | "recurrence" | "difficulty"
     > & {
       xp_reward?: number;
       recurrence?: Recurrence;
+      difficulty?: Difficulty;
     },
   ) => void;
   completeTask: (
@@ -154,6 +155,10 @@ interface State {
   reorderTasks: (orderedIds: string[]) => void;
   unlockBadgeIfNeeded: (key: string) => boolean;
   setDailyGoal: (xp: number) => void;
+  setPetName: (name: string) => void;
+  setPetHat: (hat: PetHat) => void;
+  setAccent: (accent: AccentTheme) => void;
+  setSoundEnabled: (enabled: boolean) => void;
   logStudySession: (minutes: number, roomId: string | null) => { xp: number; newBadges: string[] };
   joinRoom: (roomId: string) => { newBadges: string[] };
   resetDemo: () => void;
