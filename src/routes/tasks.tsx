@@ -14,9 +14,11 @@ import {
   Priority,
   Recurrence,
   TaskType,
-  XP_BY_PRIORITY,
+  Difficulty,
+  xpForTask,
 } from "@/lib/store";
 import { useGameFeedback } from "@/hooks/useGameFeedback";
+import { useGlobalNavShortcuts, useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { AnimatePresence, motion } from "framer-motion";
 
 export const Route = createFileRoute("/tasks")({
@@ -47,6 +49,8 @@ function TasksPage() {
   const [view, setView] = useState<"list" | "week">("list");
   const [drawer, setDrawer] = useState(false);
   const fb = useGameFeedback();
+  useGlobalNavShortcuts();
+  useKeyboardShortcuts([{ key: "n", handler: () => setDrawer(true) }]);
 
   const subjects = useMemo(() => {
     return Array.from(new Set(tasks.map((t) => t.subject))).filter(Boolean);
@@ -196,6 +200,7 @@ function NewTaskDrawer({
   const [subject, setSubject] = useState("");
   const [type, setType] = useState<TaskType>("Homework");
   const [priority, setPriority] = useState<Priority>("Medium");
+  const [difficulty, setDifficulty] = useState<Difficulty>("Medium");
   const [recurrence, setRecurrence] = useState<Recurrence>("none");
   const [due, setDue] = useState(() => {
     const d = new Date();
@@ -212,12 +217,14 @@ function NewTaskDrawer({
       type,
       priority,
       due_date: new Date(due).toISOString(),
-      xp_reward: XP_BY_PRIORITY[priority],
+      xp_reward: xpForTask(priority, difficulty),
       recurrence,
+      difficulty,
     });
     setTitle("");
     setSubject("");
     setRecurrence("none");
+    setDifficulty("Medium");
     onClose();
   };
 
