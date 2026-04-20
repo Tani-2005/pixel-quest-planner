@@ -14,6 +14,7 @@ export function HUD() {
     { to: "/tasks", label: "Tasks" },
     { to: "/study", label: "Study Room" },
     { to: "/badges", label: "Badges" },
+    { to: "/settings", label: "Settings" },
   ] as const;
 
   return (
