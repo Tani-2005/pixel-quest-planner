@@ -291,7 +291,33 @@ function NewTaskDrawer({
                       }`}
                     >
                       {p}
-                      <div className="text-[7px] mt-1 opacity-70">+{XP_BY_PRIORITY[p]} XP</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div className="font-pixel text-[8px] text-pixel-cyan mb-2 flex items-center justify-between">
+                  <span>Difficulty</span>
+                  <span className="text-pixel-gold">+{xpForTask(priority, difficulty)} XP</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {(["Easy", "Medium", "Epic"] as Difficulty[]).map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => setDifficulty(d)}
+                      className={`font-pixel text-[8px] py-3 border-2 ${
+                        difficulty === d
+                          ? d === "Easy"
+                            ? "bg-pixel-green text-[oklch(0.18_0.08_295)] border-pixel-purple"
+                            : d === "Medium"
+                              ? "bg-pixel-gold text-[oklch(0.18_0.08_295)] border-pixel-purple"
+                              : "bg-pixel-pink text-white border-pixel-purple"
+                          : "border-pixel-purple text-muted-foreground"
+                      }`}
+                    >
+                      {d === "Easy" ? "🟢" : d === "Medium" ? "🟡" : "🔥"} {d}
                     </button>
                   ))}
                 </div>
