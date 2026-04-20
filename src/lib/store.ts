@@ -463,6 +463,11 @@ export const useGame = create<State>()(
         return { newBadges };
       },
 
+      setPetName: (name) => set((s) => ({ user: { ...s.user, pet_name: name.slice(0, 20) } })),
+      setPetHat: (hat) => set((s) => ({ user: { ...s.user, pet_hat: hat } })),
+      setAccent: (accent) => set((s) => ({ user: { ...s.user, accent } })),
+      setSoundEnabled: (enabled) => set((s) => ({ user: { ...s.user, sound_enabled: enabled } })),
+
       resetDemo: () =>
         set({
           authed: false,
@@ -476,10 +481,10 @@ export const useGame = create<State>()(
     }),
     {
       name: "pixelquest-store",
-      version: 2,
+      version: 3,
       migrate: (persisted: unknown, version) => {
         const p = (persisted ?? {}) as Partial<State>;
-        if (version < 2) {
+        if (version < 3) {
           return {
             ...p,
             user: { ...initialUser, ...(p.user ?? {}) },
@@ -487,6 +492,7 @@ export const useGame = create<State>()(
               ...t,
               recurrence: (t as Task).recurrence ?? "none",
               order: (t as Task).order ?? i,
+              difficulty: (t as Task).difficulty ?? "Medium",
             })),
             xp_log: p.xp_log ?? {},
             sessions: p.sessions ?? [],
