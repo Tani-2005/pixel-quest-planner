@@ -51,11 +51,22 @@ export function PetEvolution({ level, totalXp }: Props) {
           className="text-8xl relative"
         >
           {pet.emoji}
+          {hat && (
+            <span
+              aria-hidden
+              className="absolute text-3xl"
+              style={{ top: "-12%", left: "50%", transform: "translateX(-50%) rotate(-8deg)" }}
+            >
+              {hat}
+            </span>
+          )}
         </motion.div>
       </div>
 
-      <div className="font-pixel text-sm text-pixel-pink mt-2">{pet.name}</div>
-      <div className="font-pixel text-[8px] text-muted-foreground mt-1">{pet.stage}</div>
+      <div className="font-pixel text-sm text-pixel-pink mt-2">{displayName}</div>
+      <div className="font-pixel text-[8px] text-muted-foreground mt-1">
+        {pet.stage} · {pet.name}
+      </div>
 
       <div className="mt-5">
         <div className="flex justify-between font-pixel text-[8px] text-muted-foreground mb-1">
