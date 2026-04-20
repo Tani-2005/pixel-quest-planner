@@ -5,6 +5,9 @@ export type Priority = "High" | "Medium" | "Low";
 export type TaskType = "Homework" | "Exam" | "Project" | "Club Task" | "Personal";
 export type TaskStatus = "To Do" | "In Progress" | "Done";
 export type Recurrence = "none" | "daily" | "weekly";
+export type Difficulty = "Easy" | "Medium" | "Epic";
+export type AccentTheme = "pink" | "cyan" | "gold" | "green";
+export type PetHat = "none" | "crown" | "wizard" | "cap" | "halo";
 
 export interface Task {
   id: string;
@@ -19,6 +22,7 @@ export interface Task {
   created_at: string;
   recurrence: Recurrence;
   order: number;
+  difficulty: Difficulty;
 }
 
 export interface BadgeUnlock {
@@ -35,6 +39,10 @@ export interface User {
   streak_count: number;
   last_active_date: string | null;
   daily_xp_goal: number;
+  pet_name: string;
+  pet_hat: PetHat;
+  accent: AccentTheme;
+  sound_enabled: boolean;
 }
 
 export interface StudySession {
@@ -61,6 +69,22 @@ export const XP_BY_PRIORITY: Record<Priority, number> = {
   Medium: 20,
   Low: 10,
 };
+
+export const DIFFICULTY_MULTIPLIER: Record<Difficulty, number> = {
+  Easy: 0.75,
+  Medium: 1,
+  Epic: 1.6,
+};
+
+export const DIFFICULTY_META: Record<Difficulty, { emoji: string; color: string }> = {
+  Easy: { emoji: "🟢", color: "text-pixel-green" },
+  Medium: { emoji: "🟡", color: "text-pixel-gold" },
+  Epic: { emoji: "🔥", color: "text-pixel-pink" },
+};
+
+export function xpForTask(priority: Priority, difficulty: Difficulty) {
+  return Math.round(XP_BY_PRIORITY[priority] * DIFFICULTY_MULTIPLIER[difficulty]);
+}
 
 export const BADGES = [
   { key: "first_quest", emoji: "⚔️", name: "First Quest", desc: "Complete 1 task" },
