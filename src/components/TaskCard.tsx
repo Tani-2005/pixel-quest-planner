@@ -1,6 +1,7 @@
 import { Task, subjectColor } from "@/lib/store";
 import { PixelButton } from "./PixelButton";
 import { SubjectTag } from "./SubjectTag";
+import { DifficultyChip } from "./DifficultyChip";
 import { MouseEvent } from "react";
 
 const priorityBorder: Record<string, string> = {
@@ -79,6 +80,7 @@ export function TaskCard({
                 ↻ {task.recurrence}
               </span>
             )}
+            <DifficultyChip difficulty={task.difficulty} />
             {overdue && <span className="font-pixel text-[8px] text-pixel-red">☠️ OVERDUE</span>}
           </div>
           <h3 className="font-sans font-semibold text-base text-foreground break-words">

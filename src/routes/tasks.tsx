@@ -14,9 +14,11 @@ import {
   Priority,
   Recurrence,
   TaskType,
-  XP_BY_PRIORITY,
+  Difficulty,
+  xpForTask,
 } from "@/lib/store";
 import { useGameFeedback } from "@/hooks/useGameFeedback";
+import { useGlobalNavShortcuts, useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { AnimatePresence, motion } from "framer-motion";
 
 export const Route = createFileRoute("/tasks")({
@@ -47,6 +49,8 @@ function TasksPage() {
   const [view, setView] = useState<"list" | "week">("list");
   const [drawer, setDrawer] = useState(false);
   const fb = useGameFeedback();
+  useGlobalNavShortcuts();
+  useKeyboardShortcuts([{ key: "n", handler: () => setDrawer(true) }]);
 
   const subjects = useMemo(() => {
     return Array.from(new Set(tasks.map((t) => t.subject))).filter(Boolean);
@@ -196,6 +200,7 @@ function NewTaskDrawer({
   const [subject, setSubject] = useState("");
   const [type, setType] = useState<TaskType>("Homework");
   const [priority, setPriority] = useState<Priority>("Medium");
+  const [difficulty, setDifficulty] = useState<Difficulty>("Medium");
   const [recurrence, setRecurrence] = useState<Recurrence>("none");
   const [due, setDue] = useState(() => {
     const d = new Date();
@@ -212,12 +217,14 @@ function NewTaskDrawer({
       type,
       priority,
       due_date: new Date(due).toISOString(),
-      xp_reward: XP_BY_PRIORITY[priority],
+      xp_reward: xpForTask(priority, difficulty),
       recurrence,
+      difficulty,
     });
     setTitle("");
     setSubject("");
     setRecurrence("none");
+    setDifficulty("Medium");
     onClose();
   };
 
@@ -284,7 +291,33 @@ function NewTaskDrawer({
                       }`}
                     >
                       {p}
-                      <div className="text-[7px] mt-1 opacity-70">+{XP_BY_PRIORITY[p]} XP</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div className="font-pixel text-[8px] text-pixel-cyan mb-2 flex items-center justify-between">
+                  <span>Difficulty</span>
+                  <span className="text-pixel-gold">+{xpForTask(priority, difficulty)} XP</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {(["Easy", "Medium", "Epic"] as Difficulty[]).map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => setDifficulty(d)}
+                      className={`font-pixel text-[8px] py-3 border-2 ${
+                        difficulty === d
+                          ? d === "Easy"
+                            ? "bg-pixel-green text-[oklch(0.18_0.08_295)] border-pixel-purple"
+                            : d === "Medium"
+                              ? "bg-pixel-gold text-[oklch(0.18_0.08_295)] border-pixel-purple"
+                              : "bg-pixel-pink text-white border-pixel-purple"
+                          : "border-pixel-purple text-muted-foreground"
+                      }`}
+                    >
+                      {d === "Easy" ? "🟢" : d === "Medium" ? "🟡" : "🔥"} {d}
                     </button>
                   ))}
                 </div>

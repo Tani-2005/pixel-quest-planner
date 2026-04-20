@@ -5,6 +5,9 @@ export type Priority = "High" | "Medium" | "Low";
 export type TaskType = "Homework" | "Exam" | "Project" | "Club Task" | "Personal";
 export type TaskStatus = "To Do" | "In Progress" | "Done";
 export type Recurrence = "none" | "daily" | "weekly";
+export type Difficulty = "Easy" | "Medium" | "Epic";
+export type AccentTheme = "pink" | "cyan" | "gold" | "green";
+export type PetHat = "none" | "crown" | "wizard" | "cap" | "halo";
 
 export interface Task {
   id: string;
@@ -19,6 +22,7 @@ export interface Task {
   created_at: string;
   recurrence: Recurrence;
   order: number;
+  difficulty: Difficulty;
 }
 
 export interface BadgeUnlock {
@@ -35,6 +39,10 @@ export interface User {
   streak_count: number;
   last_active_date: string | null;
   daily_xp_goal: number;
+  pet_name: string;
+  pet_hat: PetHat;
+  accent: AccentTheme;
+  sound_enabled: boolean;
 }
 
 export interface StudySession {
@@ -61,6 +69,22 @@ export const XP_BY_PRIORITY: Record<Priority, number> = {
   Medium: 20,
   Low: 10,
 };
+
+export const DIFFICULTY_MULTIPLIER: Record<Difficulty, number> = {
+  Easy: 0.75,
+  Medium: 1,
+  Epic: 1.6,
+};
+
+export const DIFFICULTY_META: Record<Difficulty, { emoji: string; color: string }> = {
+  Easy: { emoji: "🟢", color: "text-pixel-green" },
+  Medium: { emoji: "🟡", color: "text-pixel-gold" },
+  Epic: { emoji: "🔥", color: "text-pixel-pink" },
+};
+
+export function xpForTask(priority: Priority, difficulty: Difficulty) {
+  return Math.round(XP_BY_PRIORITY[priority] * DIFFICULTY_MULTIPLIER[difficulty]);
+}
 
 export const BADGES = [
   { key: "first_quest", emoji: "⚔️", name: "First Quest", desc: "Complete 1 task" },
@@ -118,10 +142,11 @@ interface State {
   addTask: (
     t: Omit<
       Task,
-      "id" | "status" | "completed_at" | "created_at" | "xp_reward" | "order" | "recurrence"
+      "id" | "status" | "completed_at" | "created_at" | "xp_reward" | "order" | "recurrence" | "difficulty"
     > & {
       xp_reward?: number;
       recurrence?: Recurrence;
+      difficulty?: Difficulty;
     },
   ) => void;
   completeTask: (
@@ -130,6 +155,10 @@ interface State {
   reorderTasks: (orderedIds: string[]) => void;
   unlockBadgeIfNeeded: (key: string) => boolean;
   setDailyGoal: (xp: number) => void;
+  setPetName: (name: string) => void;
+  setPetHat: (hat: PetHat) => void;
+  setAccent: (accent: AccentTheme) => void;
+  setSoundEnabled: (enabled: boolean) => void;
   logStudySession: (minutes: number, roomId: string | null) => { xp: number; newBadges: string[] };
   joinRoom: (roomId: string) => { newBadges: string[] };
   resetDemo: () => void;
@@ -194,6 +223,7 @@ const seedTasks = (): Task[] => {
       created_at: now.toISOString(),
       recurrence: "none",
       order: 0,
+      difficulty: "Medium",
     },
     {
       id: crypto.randomUUID(),
@@ -203,11 +233,12 @@ const seedTasks = (): Task[] => {
       due_date: inDays(3),
       priority: "High",
       status: "To Do",
-      xp_reward: 30,
+      xp_reward: 48,
       completed_at: null,
       created_at: now.toISOString(),
       recurrence: "none",
       order: 1,
+      difficulty: "Epic",
     },
     {
       id: crypto.randomUUID(),
@@ -217,11 +248,12 @@ const seedTasks = (): Task[] => {
       due_date: inDays(-1),
       priority: "Low",
       status: "To Do",
-      xp_reward: 10,
+      xp_reward: 8,
       completed_at: null,
       created_at: now.toISOString(),
       recurrence: "none",
       order: 2,
+      difficulty: "Easy",
     },
   ];
 };
@@ -235,6 +267,10 @@ const initialUser: User = {
   streak_count: 0,
   last_active_date: null,
   daily_xp_goal: 50,
+  pet_name: "",
+  pet_hat: "none",
+  accent: "pink",
+  sound_enabled: true,
 };
 
 export const useGame = create<State>()(
@@ -262,6 +298,7 @@ export const useGame = create<State>()(
       addTask: (t) =>
         set((s) => {
           const maxOrder = s.tasks.reduce((m, x) => Math.max(m, x.order ?? 0), -1);
+          const difficulty = t.difficulty ?? "Medium";
           return {
             tasks: [
               {
@@ -271,12 +308,13 @@ export const useGame = create<State>()(
                 subject: t.subject,
                 due_date: t.due_date,
                 priority: t.priority,
-                status: "To Do",
-                xp_reward: t.xp_reward ?? XP_BY_PRIORITY[t.priority],
+                status: "To Do" as TaskStatus,
+                xp_reward: t.xp_reward ?? xpForTask(t.priority, difficulty),
                 completed_at: null,
                 created_at: new Date().toISOString(),
                 recurrence: t.recurrence ?? "none",
                 order: maxOrder + 1,
+                difficulty,
               },
               ...s.tasks,
             ],
@@ -425,6 +463,11 @@ export const useGame = create<State>()(
         return { newBadges };
       },
 
+      setPetName: (name) => set((s) => ({ user: { ...s.user, pet_name: name.slice(0, 20) } })),
+      setPetHat: (hat) => set((s) => ({ user: { ...s.user, pet_hat: hat } })),
+      setAccent: (accent) => set((s) => ({ user: { ...s.user, accent } })),
+      setSoundEnabled: (enabled) => set((s) => ({ user: { ...s.user, sound_enabled: enabled } })),
+
       resetDemo: () =>
         set({
           authed: false,
@@ -438,10 +481,10 @@ export const useGame = create<State>()(
     }),
     {
       name: "pixelquest-store",
-      version: 2,
+      version: 3,
       migrate: (persisted: unknown, version) => {
         const p = (persisted ?? {}) as Partial<State>;
-        if (version < 2) {
+        if (version < 3) {
           return {
             ...p,
             user: { ...initialUser, ...(p.user ?? {}) },
@@ -449,6 +492,7 @@ export const useGame = create<State>()(
               ...t,
               recurrence: (t as Task).recurrence ?? "none",
               order: (t as Task).order ?? i,
+              difficulty: (t as Task).difficulty ?? "Medium",
             })),
             xp_log: p.xp_log ?? {},
             sessions: p.sessions ?? [],

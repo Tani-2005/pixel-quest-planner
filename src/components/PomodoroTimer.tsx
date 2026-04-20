@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { PixelButton } from "./PixelButton";
+import { sfx } from "@/lib/sound";
 
 type Phase = "work" | "break";
 
@@ -42,6 +43,7 @@ export function PomodoroTimer({
       setSecondsLeft((s) => {
         if (s <= 1) {
           // phase finished
+          sfx.pomodoroEnd();
           if (phase === "work") {
             const elapsed = workMinutes;
             onSessionComplete(elapsed);
@@ -62,6 +64,7 @@ export function PomodoroTimer({
 
   const toggle = () => {
     if (!running && startedAtRef.current === null) startedAtRef.current = Date.now();
+    if (!running) sfx.pomodoroStart();
     setRunning((r) => !r);
   };
 
