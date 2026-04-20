@@ -5,11 +5,13 @@ import { PetEvolution } from "@/components/PetEvolution";
 import { QuestsPanel } from "@/components/dashboard/QuestsPanel";
 import { RecentBadgesPanel } from "@/components/dashboard/RecentBadgesPanel";
 import { DailyGoalPanel } from "@/components/dashboard/DailyGoalPanel";
+import { WeeklyRecapPanel } from "@/components/dashboard/WeeklyRecapPanel";
 import { Stat } from "@/components/dashboard/Stat";
 import { ToastStack } from "@/components/PixelToast";
 import { CompletionBurst } from "@/components/CompletionBurst";
 import { LevelUpOverlay } from "@/components/LevelUpOverlay";
 import { useGameFeedback } from "@/hooks/useGameFeedback";
+import { useGlobalNavShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — PixelQuest" }] }),
@@ -32,9 +34,10 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function Dashboard() {
-  const { user, tasks, badges, xp_log, completeTask, setDailyGoal } = useGame();
+  const { user, tasks, badges, xp_log, sessions, completeTask, setDailyGoal } = useGame();
   const pet = petStage(user.level);
   const fb = useGameFeedback();
+  useGlobalNavShortcuts();
 
   const doneCount = tasks.filter((t) => t.status === "Done").length;
   const todayKey = new Date().toISOString().slice(0, 10);
@@ -87,6 +90,8 @@ function Dashboard() {
           xpLog={xp_log}
           onSetGoal={setDailyGoal}
         />
+
+        <WeeklyRecapPanel xpLog={xp_log} sessions={sessions} tasks={tasks} />
 
         <div className="grid md:grid-cols-4 gap-4">
           <Stat label="Total XP" value={user.total_xp} accent="cyan" />
