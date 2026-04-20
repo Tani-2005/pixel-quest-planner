@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as StudyRouteImport } from './routes/study'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as BadgesRouteImport } from './routes/badges'
@@ -32,6 +33,11 @@ const StudyRoute = StudyRouteImport.update({
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -70,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/badges': typeof BadgesRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/study': typeof StudyRouteWithChildren
   '/tasks': typeof TasksRoute
@@ -81,6 +88,7 @@ export interface FileRoutesByTo {
   '/badges': typeof BadgesRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/study': typeof StudyRouteWithChildren
   '/tasks': typeof TasksRoute
@@ -93,6 +101,7 @@ export interface FileRoutesById {
   '/badges': typeof BadgesRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/study': typeof StudyRouteWithChildren
   '/tasks': typeof TasksRoute
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
     | '/badges'
     | '/dashboard'
     | '/login'
+    | '/settings'
     | '/signup'
     | '/study'
     | '/tasks'
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/badges'
     | '/dashboard'
     | '/login'
+    | '/settings'
     | '/signup'
     | '/study'
     | '/tasks'
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/badges'
     | '/dashboard'
     | '/login'
+    | '/settings'
     | '/signup'
     | '/study'
     | '/tasks'
@@ -140,6 +152,7 @@ export interface RootRouteChildren {
   BadgesRoute: typeof BadgesRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
+  SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
   StudyRoute: typeof StudyRouteWithChildren
   TasksRoute: typeof TasksRoute
@@ -166,6 +179,13 @@ declare module '@tanstack/react-router' {
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -230,6 +250,7 @@ const rootRouteChildren: RootRouteChildren = {
   BadgesRoute: BadgesRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
+  SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
   StudyRoute: StudyRouteWithChildren,
   TasksRoute: TasksRoute,
@@ -237,3 +258,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
