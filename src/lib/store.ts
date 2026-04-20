@@ -218,6 +218,7 @@ const seedTasks = (): Task[] => {
       created_at: now.toISOString(),
       recurrence: "none",
       order: 0,
+      difficulty: "Medium",
     },
     {
       id: crypto.randomUUID(),
@@ -227,11 +228,12 @@ const seedTasks = (): Task[] => {
       due_date: inDays(3),
       priority: "High",
       status: "To Do",
-      xp_reward: 30,
+      xp_reward: 48,
       completed_at: null,
       created_at: now.toISOString(),
       recurrence: "none",
       order: 1,
+      difficulty: "Epic",
     },
     {
       id: crypto.randomUUID(),
@@ -241,11 +243,12 @@ const seedTasks = (): Task[] => {
       due_date: inDays(-1),
       priority: "Low",
       status: "To Do",
-      xp_reward: 10,
+      xp_reward: 8,
       completed_at: null,
       created_at: now.toISOString(),
       recurrence: "none",
       order: 2,
+      difficulty: "Easy",
     },
   ];
 };
@@ -259,6 +262,10 @@ const initialUser: User = {
   streak_count: 0,
   last_active_date: null,
   daily_xp_goal: 50,
+  pet_name: "",
+  pet_hat: "none",
+  accent: "pink",
+  sound_enabled: true,
 };
 
 export const useGame = create<State>()(
@@ -286,6 +293,7 @@ export const useGame = create<State>()(
       addTask: (t) =>
         set((s) => {
           const maxOrder = s.tasks.reduce((m, x) => Math.max(m, x.order ?? 0), -1);
+          const difficulty = t.difficulty ?? "Medium";
           return {
             tasks: [
               {
@@ -295,12 +303,13 @@ export const useGame = create<State>()(
                 subject: t.subject,
                 due_date: t.due_date,
                 priority: t.priority,
-                status: "To Do",
-                xp_reward: t.xp_reward ?? XP_BY_PRIORITY[t.priority],
+                status: "To Do" as TaskStatus,
+                xp_reward: t.xp_reward ?? xpForTask(t.priority, difficulty),
                 completed_at: null,
                 created_at: new Date().toISOString(),
                 recurrence: t.recurrence ?? "none",
                 order: maxOrder + 1,
+                difficulty,
               },
               ...s.tasks,
             ],
