@@ -1,15 +1,22 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ToastItem } from "@/components/PixelToast";
 import { BurstEvent } from "@/components/CompletionBurst";
-import { BADGES } from "@/lib/store";
+import { BADGES, useGame } from "@/lib/store";
+import { sfx, setMuted } from "@/lib/sound";
 
 export function useGameFeedback() {
+  const { user } = useGame();
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [bursts, setBursts] = useState<BurstEvent[]>([]);
   const [levelUp, setLevelUp] = useState<{ open: boolean; level: number }>({
     open: false,
     level: 1,
   });
+
+  // Keep sound mute flag in sync with persisted user preference
+  useEffect(() => {
+    setMuted(!user.sound_enabled);
+  }, [user.sound_enabled]);
 
   const pushToast = useCallback((t: ToastItem) => {
     setToasts((s) => [...s, t]);
@@ -29,10 +36,12 @@ export function useGameFeedback() {
       if (!result) return;
       pushBurst({ id: crypto.randomUUID(), xp: result.gainedXp, x: anchor?.x, y: anchor?.y });
       pushToast({ id: crypto.randomUUID(), message: `+${result.gainedXp} XP ⚡`, variant: "xp" });
+      sfx.taskComplete();
       if (result.leveledUp) {
         setLevelUp({ open: true, level: result.newLevel });
+        setTimeout(() => sfx.levelUp(), 150);
       }
-      result.newBadges.forEach((key) => {
+      result.newBadges.forEach((key, i) => {
         const meta = BADGES.find((b) => b.key === key);
         if (!meta) return;
         pushToast({
@@ -40,6 +49,7 @@ export function useGameFeedback() {
           message: `🏅 BADGE: ${meta.name}`,
           variant: "badge",
         });
+        setTimeout(() => sfx.badge(), 250 + i * 200);
       });
     },
     [pushBurst, pushToast],
