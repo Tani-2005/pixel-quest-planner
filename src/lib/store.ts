@@ -54,14 +54,40 @@ export interface StudySession {
   room_id: string | null;
 }
 
+export interface RoomMember {
+  name: string;
+  emoji: string;
+  status: "focused" | "break" | "idle";
+}
+
 export interface Room {
   id: string;
   name: string;
   subject: string;
   emoji: string;
-  members: { name: string; emoji: string; status: "focused" | "break" | "idle" }[];
+  members: RoomMember[];
   active_timer_started_at: string | null;
   active_timer_minutes: number;
+  created_by_you?: boolean;
+}
+
+export interface RoomMessage {
+  id: string;
+  room_id: string;
+  author: string;
+  emoji: string;
+  text: string; // emoji-only or short cheer
+  kind: "cheer" | "reaction" | "system";
+  created_at: string;
+}
+
+export interface Friend {
+  id: string;
+  name: string;
+  emoji: string;
+  weekly_minutes: number;
+  weekly_xp: number;
+  online: boolean;
 }
 
 export const XP_BY_PRIORITY: Record<Priority, number> = {
@@ -96,6 +122,7 @@ export const BADGES = [
   { key: "legend", emoji: "🏆", name: "Legend", desc: "Reach Level 20" },
   { key: "study_squad", emoji: "🧑‍💻", name: "Study Squad", desc: "Join a Study Room" },
   { key: "focus_master", emoji: "🧘", name: "Focus Master", desc: "60+ min in focus" },
+  { key: "room_host", emoji: "🛠", name: "Room Host", desc: "Create your first room" },
 ] as const;
 
 export function levelFromXp(xp: number) {
@@ -136,6 +163,8 @@ interface State {
   xp_log: Record<string, number>; // date (YYYY-MM-DD) -> xp earned
   sessions: StudySession[];
   rooms: Room[];
+  messages: RoomMessage[];
+  friends: Friend[];
   // actions
   login: (username: string) => void;
   logout: () => void;
@@ -161,6 +190,14 @@ interface State {
   setSoundEnabled: (enabled: boolean) => void;
   logStudySession: (minutes: number, roomId: string | null) => { xp: number; newBadges: string[] };
   joinRoom: (roomId: string) => { newBadges: string[] };
+  createRoom: (input: {
+    name: string;
+    subject: string;
+    emoji: string;
+    timerMinutes: number;
+  }) => { room: Room; newBadges: string[] };
+  postCheer: (roomId: string, text: string, kind?: RoomMessage["kind"]) => void;
+  addFriend: (name: string) => Friend | null;
   resetDemo: () => void;
 }
 
@@ -205,6 +242,28 @@ const seedRooms = (): Room[] => [
     active_timer_minutes: 25,
   },
 ];
+
+const seedFriends = (): Friend[] => [
+  { id: "f1", name: "Aria", emoji: "🦊", weekly_minutes: 320, weekly_xp: 480, online: true },
+  { id: "f2", name: "Kenji", emoji: "🐼", weekly_minutes: 280, weekly_xp: 410, online: true },
+  { id: "f3", name: "Lin", emoji: "🦉", weekly_minutes: 240, weekly_xp: 360, online: false },
+  { id: "f4", name: "Sam", emoji: "🐸", weekly_minutes: 200, weekly_xp: 290, online: true },
+  { id: "f5", name: "Ria", emoji: "🐰", weekly_minutes: 165, weekly_xp: 240, online: false },
+  { id: "f6", name: "Theo", emoji: "🦝", weekly_minutes: 140, weekly_xp: 200, online: true },
+  { id: "f7", name: "Mira", emoji: "🐧", weekly_minutes: 95, weekly_xp: 140, online: false },
+];
+
+const seedMessages = (): RoomMessage[] => {
+  const now = Date.now();
+  const ago = (m: number) => new Date(now - m * 60000).toISOString();
+  return [
+    { id: crypto.randomUUID(), room_id: "math-cram", author: "Aria", emoji: "🦊", text: "🎉 GG focus team!", kind: "cheer", created_at: ago(28) },
+    { id: crypto.randomUUID(), room_id: "math-cram", author: "Kenji", emoji: "🐼", text: "🔥", kind: "reaction", created_at: ago(22) },
+    { id: crypto.randomUUID(), room_id: "math-cram", author: "Lin", emoji: "🦉", text: "let's gooo 💪", kind: "cheer", created_at: ago(15) },
+    { id: crypto.randomUUID(), room_id: "late-coders", author: "Sam", emoji: "🐸", text: "⚡", kind: "reaction", created_at: ago(40) },
+    { id: crypto.randomUUID(), room_id: "late-coders", author: "Ria", emoji: "🐰", text: "💯 keep pushing", kind: "cheer", created_at: ago(12) },
+  ];
+};
 
 const seedTasks = (): Task[] => {
   const now = new Date();
@@ -283,6 +342,8 @@ export const useGame = create<State>()(
       xp_log: {},
       sessions: [],
       rooms: seedRooms(),
+      messages: seedMessages(),
+      friends: seedFriends(),
 
       login: (username) => {
         const existing = get().tasks;
@@ -291,6 +352,8 @@ export const useGame = create<State>()(
           user: { ...get().user, username: username || "Player" },
           tasks: existing.length ? existing : seedTasks(),
           rooms: get().rooms.length ? get().rooms : seedRooms(),
+          friends: get().friends.length ? get().friends : seedFriends(),
+          messages: get().messages.length ? get().messages : seedMessages(),
         });
       },
       logout: () => set({ authed: false }),
@@ -463,6 +526,55 @@ export const useGame = create<State>()(
         return { newBadges };
       },
 
+      createRoom: ({ name, subject, emoji, timerMinutes }) => {
+        const id = `r-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+        const room: Room = {
+          id,
+          name: name.trim().slice(0, 40) || "My Study Room",
+          subject: subject.trim().slice(0, 30) || "General",
+          emoji: emoji || "🎯",
+          members: [],
+          active_timer_started_at: null,
+          active_timer_minutes: Math.max(5, Math.min(120, Math.round(timerMinutes))),
+          created_by_you: true,
+        };
+        set((s) => ({ rooms: [room, ...s.rooms] }));
+        const newBadges: string[] = [];
+        if (get().unlockBadgeIfNeeded("room_host")) newBadges.push("room_host");
+        return { room, newBadges };
+      },
+
+      postCheer: (roomId, text, kind = "cheer") => {
+        const u = get().user;
+        const msg: RoomMessage = {
+          id: crypto.randomUUID(),
+          room_id: roomId,
+          author: u.username,
+          emoji: u.avatar_emoji,
+          text: text.slice(0, 80),
+          kind,
+          created_at: new Date().toISOString(),
+        };
+        set((s) => ({ messages: [...s.messages, msg].slice(-200) }));
+      },
+
+      addFriend: (name) => {
+        const trimmed = name.trim().slice(0, 24);
+        if (!trimmed) return null;
+        if (get().friends.some((f) => f.name.toLowerCase() === trimmed.toLowerCase())) return null;
+        const emojis = ["🐺", "🐢", "🦄", "🐙", "🦋", "🐝", "🦔", "🦦"];
+        const friend: Friend = {
+          id: `f-${Date.now().toString(36)}`,
+          name: trimmed,
+          emoji: emojis[Math.floor(Math.random() * emojis.length)],
+          weekly_minutes: Math.floor(Math.random() * 80),
+          weekly_xp: Math.floor(Math.random() * 120),
+          online: Math.random() > 0.4,
+        };
+        set((s) => ({ friends: [friend, ...s.friends] }));
+        return friend;
+      },
+
       setPetName: (name) => set((s) => ({ user: { ...s.user, pet_name: name.slice(0, 20) } })),
       setPetHat: (hat) => set((s) => ({ user: { ...s.user, pet_hat: hat } })),
       setAccent: (accent) => set((s) => ({ user: { ...s.user, accent } })),
@@ -477,14 +589,16 @@ export const useGame = create<State>()(
           xp_log: {},
           sessions: [],
           rooms: seedRooms(),
+          messages: seedMessages(),
+          friends: seedFriends(),
         }),
     }),
     {
       name: "pixelquest-store",
-      version: 3,
+      version: 4,
       migrate: (persisted: unknown, version) => {
         const p = (persisted ?? {}) as Partial<State>;
-        if (version < 3) {
+        if (version < 4) {
           return {
             ...p,
             user: { ...initialUser, ...(p.user ?? {}) },
@@ -497,6 +611,8 @@ export const useGame = create<State>()(
             xp_log: p.xp_log ?? {},
             sessions: p.sessions ?? [],
             rooms: p.rooms?.length ? p.rooms : seedRooms(),
+            messages: p.messages?.length ? p.messages : seedMessages(),
+            friends: p.friends?.length ? p.friends : seedFriends(),
           } as State;
         }
         return p as State;
