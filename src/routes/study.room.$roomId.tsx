@@ -5,10 +5,11 @@ import { AmbientBackdrop } from "@/components/AmbientBackdrop";
 import { ToastStack } from "@/components/PixelToast";
 import { CompletionBurst } from "@/components/CompletionBurst";
 import { PixelButton } from "@/components/PixelButton";
+import { RoomChat } from "@/components/RoomChat";
 import { useGame } from "@/lib/store";
 import { useGameFeedback } from "@/hooks/useGameFeedback";
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export const Route = createFileRoute("/study/room/$roomId")({
   head: () => ({
@@ -49,11 +50,11 @@ function RoomNotFound() {
 
 function RoomPage() {
   const { roomId } = Route.useParams();
-  const { rooms, user, joinRoom, logStudySession } = useGame();
+  const { rooms, user, joinRoom, logStudySession, messages, postCheer } = useGame();
   const room = rooms.find((r) => r.id === roomId);
   const fb = useGameFeedback();
   const nav = useNavigate();
-  const [cheers, setCheers] = useState<{ id: string; from: string }[]>([]);
+  const [copied, setCopied] = useState(false);
 
   // join on mount
   useEffect(() => {
@@ -64,6 +65,11 @@ function RoomPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const roomMessages = useMemo(
+    () => messages.filter((m) => m.room_id === roomId),
+    [messages, roomId],
+  );
 
   if (!room) {
     return <RoomNotFound />;
@@ -77,16 +83,26 @@ function RoomPage() {
     );
   };
 
-  const cheer = (from: string) => {
-    const id = crypto.randomUUID();
-    setCheers((c) => [...c, { id, from }]);
-    setTimeout(() => setCheers((c) => c.filter((x) => x.id !== id)), 2000);
-    fb.pushToast({ id: crypto.randomUUID(), message: `🎉 ${from} cheered you on!`, variant: "xp" });
+  const sendCheer = (text: string) => postCheer(room.id, text, "cheer");
+  const sendReaction = (emoji: string) => postCheer(room.id, emoji, "reaction");
+
+  const inviteLink =
+    typeof window !== "undefined" ? `${window.location.origin}/study/room/${room.id}` : `/study/room/${room.id}`;
+
+  const copyInvite = async () => {
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setCopied(true);
+      fb.pushToast({ id: crypto.randomUUID(), message: "🔗 Invite link copied!", variant: "xp" });
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      fb.pushToast({ id: crypto.randomUUID(), message: inviteLink, variant: "xp" });
+    }
   };
 
   // mix the player into the member list
   const allMembers = [
-    { name: user.username, emoji: "🧙", status: "focused" as const, you: true },
+    { name: user.username, emoji: user.avatar_emoji || "🧙", status: "focused" as const, you: true },
     ...room.members.map((m) => ({ ...m, you: false })),
   ];
 
@@ -97,7 +113,7 @@ function RoomPage() {
       <ToastStack items={fb.toasts} />
       <CompletionBurst events={fb.bursts} />
 
-      <main className="max-w-5xl mx-auto px-4 md:px-6 py-8 relative">
+      <main className="max-w-6xl mx-auto px-4 md:px-6 py-8 relative">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
           <div className="flex items-center gap-3">
             <div className="text-4xl">{room.emoji}</div>
@@ -105,93 +121,88 @@ function RoomPage() {
               <h1 className="font-pixel text-base text-pixel-cyan">{room.name}</h1>
               <p className="font-pixel text-[8px] text-muted-foreground mt-1">
                 {room.subject} · {allMembers.length} members
+                {room.created_by_you && (
+                  <span className="ml-2 text-pixel-gold">· hosted by you</span>
+                )}
               </p>
             </div>
           </div>
-          <Link to="/study">
-            <PixelButton variant="ghost" size="sm" onClick={() => nav({ to: "/study" })}>
-              ← Leave Room
+          <div className="flex gap-2 flex-wrap">
+            <PixelButton variant="secondary" size="sm" onClick={copyInvite}>
+              {copied ? "✓ Copied" : "🔗 Invite"}
             </PixelButton>
-          </Link>
+            <Link to="/study">
+              <PixelButton variant="ghost" size="sm" onClick={() => nav({ to: "/study" })}>
+                ← Leave
+              </PixelButton>
+            </Link>
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
           {/* shared timer */}
-          <div className="lg:col-span-2 bg-pixel-surface border-2 border-pixel-pink shadow-pixel-pink p-8 relative">
-            <div className="font-pixel text-[8px] text-muted-foreground mb-4 text-center">
-              SHARED FOCUS · everyone&apos;s timer
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-pixel-surface border-2 border-pixel-pink shadow-pixel-pink p-8 relative">
+              <div className="font-pixel text-[8px] text-muted-foreground mb-4 text-center">
+                SHARED FOCUS · everyone&apos;s timer
+              </div>
+              <PomodoroTimer
+                workMinutes={room.active_timer_minutes}
+                onSessionComplete={handleSession}
+                accent="pink"
+              />
             </div>
-            <PomodoroTimer
-              workMinutes={room.active_timer_minutes}
-              onSessionComplete={handleSession}
-              accent="pink"
-            />
-          </div>
 
-          {/* members */}
-          <div className="bg-pixel-surface border-2 border-pixel-cyan shadow-pixel-cyan p-5">
-            <h3 className="font-pixel text-xs text-pixel-cyan mb-4">Party</h3>
-            <ul className="space-y-3">
-              {allMembers.map((m) => (
-                <li
-                  key={m.name}
-                  className={`flex items-center justify-between gap-2 bg-[oklch(0.14_0.06_295)] border ${
-                    m.you ? "border-pixel-pink" : "border-pixel-purple"
-                  } p-2`}
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <motion.span
-                      className="text-2xl"
-                      animate={m.status === "focused" ? { y: [0, -3, 0] } : {}}
-                      transition={{ duration: 2.4, repeat: Infinity }}
-                    >
-                      {m.emoji}
-                    </motion.span>
-                    <div className="min-w-0">
-                      <div className="font-sans text-xs font-medium truncate">
-                        {m.name} {m.you && <span className="text-pixel-pink">(you)</span>}
-                      </div>
-                      <div
-                        className={`font-pixel text-[7px] ${
-                          m.status === "focused"
-                            ? "text-pixel-green"
-                            : m.status === "break"
-                              ? "text-pixel-gold"
-                              : "text-muted-foreground"
-                        }`}
+            {/* members */}
+            <div className="bg-pixel-surface border-2 border-pixel-cyan shadow-pixel-cyan p-5">
+              <h3 className="font-pixel text-xs text-pixel-cyan mb-4">Party</h3>
+              <ul className="grid sm:grid-cols-2 gap-3">
+                {allMembers.map((m) => (
+                  <li
+                    key={m.name}
+                    className={`flex items-center justify-between gap-2 bg-[oklch(0.14_0.06_295)] border ${
+                      m.you ? "border-pixel-pink" : "border-pixel-purple"
+                    } p-2`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <motion.span
+                        className="text-2xl"
+                        animate={m.status === "focused" ? { y: [0, -3, 0] } : {}}
+                        transition={{ duration: 2.4, repeat: Infinity }}
                       >
-                        ● {m.status}
+                        {m.emoji}
+                      </motion.span>
+                      <div className="min-w-0">
+                        <div className="font-sans text-xs font-medium truncate">
+                          {m.name} {m.you && <span className="text-pixel-pink">(you)</span>}
+                        </div>
+                        <div
+                          className={`font-pixel text-[7px] ${
+                            m.status === "focused"
+                              ? "text-pixel-green"
+                              : m.status === "break"
+                                ? "text-pixel-gold"
+                                : "text-muted-foreground"
+                          }`}
+                        >
+                          ● {m.status}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  {!m.you && (
-                    <button
-                      onClick={() => cheer(m.name)}
-                      className="font-pixel text-[8px] px-2 py-1 border border-pixel-gold text-pixel-gold hover:bg-pixel-gold hover:text-[oklch(0.18_0.08_295)]"
-                      title="Cheer"
-                    >
-                      🎉
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ul>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
-        </div>
 
-        {/* floating cheers */}
-        <div className="fixed inset-x-0 top-32 z-[180] pointer-events-none flex flex-col items-center gap-2">
-          {cheers.map((c) => (
-            <motion.div
-              key={c.id}
-              initial={{ opacity: 0, scale: 0.8, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="font-pixel text-[10px] bg-pixel-gold text-[oklch(0.18_0.08_295)] px-3 py-2 border-2 border-pixel-purple"
-            >
-              🎉 You cheered {c.from}!
-            </motion.div>
-          ))}
+          {/* chat */}
+          <div>
+            <RoomChat
+              messages={roomMessages}
+              onSend={sendCheer}
+              onReaction={sendReaction}
+            />
+          </div>
         </div>
       </main>
     </div>

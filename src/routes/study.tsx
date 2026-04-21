@@ -4,7 +4,11 @@ import { useGame } from "@/lib/store";
 import { PixelButton } from "@/components/PixelButton";
 import { RoomCard } from "@/components/RoomCard";
 import { AmbientBackdrop } from "@/components/AmbientBackdrop";
+import { CreateRoomDialog } from "@/components/CreateRoomDialog";
+import { ToastStack } from "@/components/PixelToast";
+import { useGameFeedback } from "@/hooks/useGameFeedback";
 import { motion } from "framer-motion";
+import { useState } from "react";
 
 export const Route = createFileRoute("/study")({
   head: () => ({
@@ -29,16 +33,28 @@ export const Route = createFileRoute("/study")({
 });
 
 function StudyLobby() {
-  const { rooms, sessions } = useGame();
+  const { rooms, sessions, createRoom } = useGame();
+  const fb = useGameFeedback();
+  const [createOpen, setCreateOpen] = useState(false);
+
   const totalMinutes = sessions.reduce((s, x) => s + x.minutes, 0);
   const todayMinutes = sessions
     .filter((s) => new Date(s.ended_at).toDateString() === new Date().toDateString())
     .reduce((s, x) => s + x.minutes, 0);
 
+  const handleCreate = (input: { name: string; subject: string; emoji: string; timerMinutes: number }) => {
+    const r = createRoom(input);
+    fb.pushToast({ id: crypto.randomUUID(), message: `🛠 Room "${r.room.name}" created!`, variant: "xp" });
+    if (r.newBadges.length) {
+      fb.handleResult({ gainedXp: 0, leveledUp: false, newLevel: 0, newBadges: r.newBadges });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background pixel-grid-bg pb-20 md:pb-8 relative">
       <HUD />
       <AmbientBackdrop tone="cyan" />
+      <ToastStack items={fb.toasts} />
 
       <main className="max-w-6xl mx-auto px-4 md:px-6 py-8 relative">
         <div className="flex items-center justify-between flex-wrap gap-4 mb-8">
@@ -48,11 +64,16 @@ function StudyLobby() {
               Focus solo or with your party · 1 XP per minute
             </p>
           </div>
-          <Link to="/study/solo">
-            <PixelButton variant="accent" size="lg">
-              ⏱ Solo Focus
+          <div className="flex flex-wrap gap-3">
+            <PixelButton variant="secondary" size="lg" onClick={() => setCreateOpen(true)}>
+              ✦ Create Room
             </PixelButton>
-          </Link>
+            <Link to="/study/solo">
+              <PixelButton variant="accent" size="lg">
+                ⏱ Solo Focus
+              </PixelButton>
+            </Link>
+          </div>
         </div>
 
         {/* stats */}
@@ -84,10 +105,23 @@ function StudyLobby() {
 
         <div className="mt-10 bg-pixel-surface border-2 border-dashed border-pixel-purple p-6 text-center">
           <p className="font-pixel text-[10px] text-muted-foreground">
-            ✦ More rooms coming · invite friends after Lovable Cloud is connected
+            ✦ Want a custom Pomodoro length & subject? Hit{" "}
+            <button
+              onClick={() => setCreateOpen(true)}
+              className="text-pixel-cyan hover:text-pixel-pink underline"
+            >
+              Create Room
+            </button>
+            .
           </p>
         </div>
       </main>
+
+      <CreateRoomDialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreate={handleCreate}
+      />
     </div>
   );
 }
