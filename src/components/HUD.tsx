@@ -10,9 +10,11 @@ export function HUD() {
   const pet = petStage(user.level);
 
   const tabs = [
-    { to: "/dashboard", label: "Dashboard" },
+    { to: "/dashboard", label: "Home" },
     { to: "/tasks", label: "Tasks" },
-    { to: "/study", label: "Study Room" },
+    { to: "/study", label: "Study" },
+    { to: "/leaderboard", label: "Ranks" },
+    { to: "/friends", label: "Friends" },
     { to: "/badges", label: "Badges" },
     { to: "/settings", label: "Settings" },
   ] as const;
