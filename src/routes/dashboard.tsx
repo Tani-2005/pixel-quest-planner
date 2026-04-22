@@ -152,6 +152,7 @@ function Dashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="relative bg-pixel-surface border-4 border-pixel-pink shadow-pixel-pink p-6 md:p-8 overflow-hidden"
+          data-tour="hero"
         >
           {/* corner chips */}
           <div className="absolute -top-3 -left-3 font-pixel text-[10px] bg-pixel-cyan text-[oklch(0.18_0.08_295)] px-2 py-1 border-2 border-pixel-purple">
