@@ -192,7 +192,10 @@ function Dashboard() {
               </p>
 
               {/* Quick action strip */}
-              <div className="mt-5 flex flex-wrap items-center gap-2">
+              <div
+                className="mt-5 flex flex-wrap items-center gap-2"
+                data-tour="quick-actions"
+              >
                 <Link to="/tasks">
                   <PixelButton variant="accent" size="sm">
                     + New Quest
@@ -211,7 +214,7 @@ function Dashboard() {
               </div>
 
               {/* Daily goal mini bar */}
-              <div className="mt-5 max-w-md">
+              <div className="mt-5 max-w-md" data-tour="daily-goal">
                 <div className="flex justify-between font-pixel text-[8px] text-muted-foreground mb-1">
                   <span>DAILY GOAL</span>
                   <span className="text-pixel-gold">
@@ -239,6 +242,7 @@ function Dashboard() {
               animate={{ opacity: 1, scale: 1, rotate: 0 }}
               transition={{ duration: 0.6, delay: 0.25 }}
               className="relative hidden md:flex items-center justify-center"
+              data-tour="pet"
             >
               <div className="absolute inset-0 bg-pixel-pink/20 blur-2xl rounded-full" />
               <div className="relative bg-[oklch(0.14_0.06_295)] border-4 border-pixel-cyan shadow-pixel-cyan p-6 w-44 h-44 flex flex-col items-center justify-center">
