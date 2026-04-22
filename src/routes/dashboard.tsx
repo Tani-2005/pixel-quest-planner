@@ -15,6 +15,7 @@ import { LevelUpOverlay } from "@/components/LevelUpOverlay";
 import { PixelButton } from "@/components/PixelButton";
 import { useGameFeedback } from "@/hooks/useGameFeedback";
 import { useGlobalNavShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { OnboardingTour, type TourStep } from "@/components/OnboardingTour";
 import spriteFireball from "@/assets/sprite-fireball.png";
 import spriteCrystal from "@/assets/sprite-crystal.png";
 import spriteWhale from "@/assets/sprite-whale.png";
@@ -68,7 +69,14 @@ function Dashboard() {
   const doneCount = tasks.filter((t) => t.status === "Done").length;
   const todayKey = new Date().toISOString().slice(0, 10);
   const todayXp = xp_log[todayKey] ?? 0;
-  const greeting = getGreeting();
+  // Greeting is time-of-day dependent — compute on client only to avoid SSR hydration mismatch.
+  const [greeting, setGreeting] = useState<{ msg: string; emoji: string }>({
+    msg: "Welcome",
+    emoji: "✨",
+  });
+  useEffect(() => {
+    setGreeting(getGreeting());
+  }, []);
   const goalPct = Math.min(100, Math.round((todayXp / Math.max(1, user.daily_xp_goal)) * 100));
   const activeQuests = tasks.filter((t) => t.status !== "Done").length;
 
