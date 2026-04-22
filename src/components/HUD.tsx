@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useGame, petStage } from "@/lib/store";
 import { XPBar } from "./XPBar";
 import { PixelButton } from "./PixelButton";
+import { supabase } from "@/integrations/supabase/client";
 
 export function HUD() {
   const { user, logout } = useGame();
@@ -64,7 +65,8 @@ export function HUD() {
         <PixelButton
           variant="ghost"
           size="sm"
-          onClick={() => {
+          onClick={async () => {
+            await supabase.auth.signOut().catch(() => {});
             logout();
             navigate({ to: "/" });
           }}

@@ -15,6 +15,7 @@ import { LevelUpOverlay } from "@/components/LevelUpOverlay";
 import { PixelButton } from "@/components/PixelButton";
 import { useGameFeedback } from "@/hooks/useGameFeedback";
 import { useGlobalNavShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { OnboardingTour, type TourStep } from "@/components/OnboardingTour";
 import spriteFireball from "@/assets/sprite-fireball.png";
 import spriteCrystal from "@/assets/sprite-crystal.png";
 import spriteWhale from "@/assets/sprite-whale.png";
@@ -59,6 +60,33 @@ function getGreeting() {
   return { msg: "Night owl mode", emoji: "🦉" };
 }
 
+const TOUR_STEPS: TourStep[] = [
+  {
+    selector: '[data-tour="hero"]',
+    title: "Welcome to PixelQuest",
+    body: "This is your hero hub. Your level, daily XP, and pet status all live here.",
+    emoji: "👋",
+  },
+  {
+    selector: '[data-tour="quick-actions"]',
+    title: "Jump straight in",
+    body: "Add a new quest, start a Solo Focus Pomodoro, or join a Study Room — all from one place.",
+    emoji: "⚡",
+  },
+  {
+    selector: '[data-tour="daily-goal"]',
+    title: "Daily goal ring",
+    body: "Earn XP from quests and focus sessions to fill this bar. Hitting it daily builds your streak.",
+    emoji: "🎯",
+  },
+  {
+    selector: '[data-tour="pet"]',
+    title: "Your pixel companion",
+    body: "Your pet evolves as you level up — from Egg, to Hatchling, to Familiar, to Dragon. Keep grinding!",
+    emoji: "🥚",
+  },
+];
+
 function Dashboard() {
   const { user, tasks, badges, xp_log, sessions, completeTask, setDailyGoal } = useGame();
   const pet = petStage(user.level);
@@ -68,7 +96,14 @@ function Dashboard() {
   const doneCount = tasks.filter((t) => t.status === "Done").length;
   const todayKey = new Date().toISOString().slice(0, 10);
   const todayXp = xp_log[todayKey] ?? 0;
-  const greeting = getGreeting();
+  // Greeting is time-of-day dependent — compute on client only to avoid SSR hydration mismatch.
+  const [greeting, setGreeting] = useState<{ msg: string; emoji: string }>({
+    msg: "Welcome",
+    emoji: "✨",
+  });
+  useEffect(() => {
+    setGreeting(getGreeting());
+  }, []);
   const goalPct = Math.min(100, Math.round((todayXp / Math.max(1, user.daily_xp_goal)) * 100));
   const activeQuests = tasks.filter((t) => t.status !== "Done").length;
 
@@ -144,6 +179,7 @@ function Dashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="relative bg-pixel-surface border-4 border-pixel-pink shadow-pixel-pink p-6 md:p-8 overflow-hidden"
+          data-tour="hero"
         >
           {/* corner chips */}
           <div className="absolute -top-3 -left-3 font-pixel text-[10px] bg-pixel-cyan text-[oklch(0.18_0.08_295)] px-2 py-1 border-2 border-pixel-purple">
@@ -183,7 +219,10 @@ function Dashboard() {
               </p>
 
               {/* Quick action strip */}
-              <div className="mt-5 flex flex-wrap items-center gap-2">
+              <div
+                className="mt-5 flex flex-wrap items-center gap-2"
+                data-tour="quick-actions"
+              >
                 <Link to="/tasks">
                   <PixelButton variant="accent" size="sm">
                     + New Quest
@@ -202,7 +241,7 @@ function Dashboard() {
               </div>
 
               {/* Daily goal mini bar */}
-              <div className="mt-5 max-w-md">
+              <div className="mt-5 max-w-md" data-tour="daily-goal">
                 <div className="flex justify-between font-pixel text-[8px] text-muted-foreground mb-1">
                   <span>DAILY GOAL</span>
                   <span className="text-pixel-gold">
@@ -230,6 +269,7 @@ function Dashboard() {
               animate={{ opacity: 1, scale: 1, rotate: 0 }}
               transition={{ duration: 0.6, delay: 0.25 }}
               className="relative hidden md:flex items-center justify-center"
+              data-tour="pet"
             >
               <div className="absolute inset-0 bg-pixel-pink/20 blur-2xl rounded-full" />
               <div className="relative bg-[oklch(0.14_0.06_295)] border-4 border-pixel-cyan shadow-pixel-cyan p-6 w-44 h-44 flex flex-col items-center justify-center">
@@ -344,6 +384,8 @@ function Dashboard() {
           </div>
         </motion.section>
       </main>
+
+      <OnboardingTour steps={TOUR_STEPS} />
     </div>
   );
 }
