@@ -60,6 +60,33 @@ function getGreeting() {
   return { msg: "Night owl mode", emoji: "🦉" };
 }
 
+const TOUR_STEPS: TourStep[] = [
+  {
+    selector: '[data-tour="hero"]',
+    title: "Welcome to PixelQuest",
+    body: "This is your hero hub. Your level, daily XP, and pet status all live here.",
+    emoji: "👋",
+  },
+  {
+    selector: '[data-tour="quick-actions"]',
+    title: "Jump straight in",
+    body: "Add a new quest, start a Solo Focus Pomodoro, or join a Study Room — all from one place.",
+    emoji: "⚡",
+  },
+  {
+    selector: '[data-tour="daily-goal"]',
+    title: "Daily goal ring",
+    body: "Earn XP from quests and focus sessions to fill this bar. Hitting it daily builds your streak.",
+    emoji: "🎯",
+  },
+  {
+    selector: '[data-tour="pet"]',
+    title: "Your pixel companion",
+    body: "Your pet evolves as you level up — from Egg, to Hatchling, to Familiar, to Dragon. Keep grinding!",
+    emoji: "🥚",
+  },
+];
+
 function Dashboard() {
   const { user, tasks, badges, xp_log, sessions, completeTask, setDailyGoal } = useGame();
   const pet = petStage(user.level);
@@ -357,6 +384,8 @@ function Dashboard() {
           </div>
         </motion.section>
       </main>
+
+      <OnboardingTour steps={TOUR_STEPS} />
     </div>
   );
 }
