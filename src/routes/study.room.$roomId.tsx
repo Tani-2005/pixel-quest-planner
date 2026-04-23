@@ -1,4 +1,5 @@
-import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { requireAuth } from "@/lib/auth-guard";
 import { HUD } from "@/components/HUD";
 import { PomodoroTimer } from "@/components/PomodoroTimer";
 import { AmbientBackdrop } from "@/components/AmbientBackdrop";
@@ -18,15 +19,7 @@ export const Route = createFileRoute("/study/room/$roomId")({
       { name: "description", content: "Focus together with your party in a shared study room." },
     ],
   }),
-  beforeLoad: () => {
-    if (typeof window !== "undefined") {
-      const raw = localStorage.getItem("pixelquest-store");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (!parsed?.state?.authed) throw redirect({ to: "/login" });
-      } else throw redirect({ to: "/login" });
-    }
-  },
+  beforeLoad: requireAuth,
   notFoundComponent: RoomNotFound,
   component: RoomPage,
 });

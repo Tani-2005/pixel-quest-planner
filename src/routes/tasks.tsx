@@ -1,4 +1,5 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { requireAuth } from "@/lib/auth-guard";
 import { useMemo, useState } from "react";
 import { HUD } from "@/components/HUD";
 import { PixelButton } from "@/components/PixelButton";
@@ -28,15 +29,7 @@ export const Route = createFileRoute("/tasks")({
       { name: "description", content: "Manage your quests, reorder them, and track recurring missions." },
     ],
   }),
-  beforeLoad: () => {
-    if (typeof window !== "undefined") {
-      const raw = localStorage.getItem("pixelquest-store");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (!parsed?.state?.authed) throw redirect({ to: "/login" });
-      } else throw redirect({ to: "/login" });
-    }
-  },
+  beforeLoad: requireAuth,
   component: TasksPage,
 });
 

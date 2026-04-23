@@ -1,4 +1,5 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { requireAuth } from "@/lib/auth-guard";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { HUD } from "@/components/HUD";
@@ -23,21 +24,7 @@ import spriteGalaxy from "@/assets/sprite-galaxy.png";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — PixelQuest" }] }),
-  beforeLoad: () => {
-    if (typeof window !== "undefined") {
-      const raw = localStorage.getItem("pixelquest-store");
-      if (raw) {
-        try {
-          const parsed = JSON.parse(raw);
-          if (!parsed?.state?.authed) throw redirect({ to: "/login" });
-        } catch (e) {
-          if (e && typeof e === "object" && "to" in e) throw e;
-        }
-      } else {
-        throw redirect({ to: "/login" });
-      }
-    }
-  },
+  beforeLoad: requireAuth,
   component: Dashboard,
 });
 
@@ -385,7 +372,10 @@ function Dashboard() {
         </motion.section>
       </main>
 
-      <OnboardingTour steps={TOUR_STEPS} />
+      <OnboardingTour
+        steps={TOUR_STEPS}
+        storageKey={`pixelquest-tour-v1:${user.username || "guest"}`}
+      />
     </div>
   );
 }

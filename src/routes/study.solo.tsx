@@ -1,4 +1,5 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { requireAuth } from "@/lib/auth-guard";
 import { HUD } from "@/components/HUD";
 import { PomodoroTimer } from "@/components/PomodoroTimer";
 import { AmbientBackdrop } from "@/components/AmbientBackdrop";
@@ -15,15 +16,7 @@ export const Route = createFileRoute("/study/solo")({
       { name: "description", content: "A single-player Pomodoro timer that earns XP per minute focused." },
     ],
   }),
-  beforeLoad: () => {
-    if (typeof window !== "undefined") {
-      const raw = localStorage.getItem("pixelquest-store");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (!parsed?.state?.authed) throw redirect({ to: "/login" });
-      } else throw redirect({ to: "/login" });
-    }
-  },
+  beforeLoad: requireAuth,
   component: SoloFocus,
 });
 
