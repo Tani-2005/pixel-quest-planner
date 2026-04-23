@@ -372,7 +372,10 @@ function Dashboard() {
         </motion.section>
       </main>
 
-      <OnboardingTour steps={TOUR_STEPS} />
+      <OnboardingTour
+        steps={TOUR_STEPS}
+        storageKey={`pixelquest-tour-v1:${user.username || "guest"}`}
+      />
     </div>
   );
 }
