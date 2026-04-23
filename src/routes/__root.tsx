@@ -1,4 +1,5 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { useAuthSync } from "@/hooks/useAuthSync";
 
 import appCss from "../styles.css?url";
 
@@ -65,5 +66,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  useAuthSync();
   return <Outlet />;
 }
