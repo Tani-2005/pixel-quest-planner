@@ -1,4 +1,5 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { requireAuth } from "@/lib/auth-guard";
 import { HUD } from "@/components/HUD";
 import { useGame } from "@/lib/store";
 import { motion } from "framer-motion";
@@ -11,15 +12,7 @@ export const Route = createFileRoute("/leaderboard")({
       { name: "description", content: "Weekly focus-minute leaderboard for you and your study squad." },
     ],
   }),
-  beforeLoad: () => {
-    if (typeof window !== "undefined") {
-      const raw = localStorage.getItem("pixelquest-store");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (!parsed?.state?.authed) throw redirect({ to: "/login" });
-      } else throw redirect({ to: "/login" });
-    }
-  },
+  beforeLoad: requireAuth,
   component: Leaderboard,
 });
 

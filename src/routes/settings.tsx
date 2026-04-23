@@ -1,4 +1,5 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { requireAuth } from "@/lib/auth-guard";
 import { HUD } from "@/components/HUD";
 import { PixelButton } from "@/components/PixelButton";
 import { PetEvolution } from "@/components/PetEvolution";
@@ -7,18 +8,7 @@ import { sfx, setMuted } from "@/lib/sound";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings — PixelQuest" }] }),
-  beforeLoad: () => {
-    if (typeof window !== "undefined") {
-      const raw = localStorage.getItem("pixelquest-store");
-      if (!raw) throw redirect({ to: "/login" });
-      try {
-        const parsed = JSON.parse(raw);
-        if (!parsed?.state?.authed) throw redirect({ to: "/login" });
-      } catch (e) {
-        if (e && typeof e === "object" && "to" in e) throw e;
-      }
-    }
-  },
+  beforeLoad: requireAuth,
   component: SettingsPage,
 });
 
