@@ -17,8 +17,12 @@ export function RoomCard({ room }: { room: Room }) {
           <div className="font-pixel text-[8px] text-muted-foreground mt-1">{room.subject}</div>
         </div>
         <div className="text-right">
-          <div className="font-pixel text-[8px] text-pixel-gold">{room.active_timer_minutes}m</div>
-          <div className="font-pixel text-[8px] text-muted-foreground mt-1">cycles</div>
+          <div className="font-pixel text-[8px] text-pixel-gold">
+            {room.mode === "animedoro" ? "🎬" : "🍅"} {room.active_timer_minutes}m
+          </div>
+          <div className="font-pixel text-[8px] text-pixel-cyan tracking-[0.2em] mt-1">
+            {room.code}
+          </div>
         </div>
       </div>
 

@@ -60,14 +60,19 @@ export interface RoomMember {
   status: "focused" | "break" | "idle";
 }
 
+export type RoomMode = "pomodoro" | "animedoro";
+
 export interface Room {
   id: string;
+  code: string; // 6-char room code for join-by-code
   name: string;
   subject: string;
   emoji: string;
   members: RoomMember[];
   active_timer_started_at: string | null;
   active_timer_minutes: number;
+  break_minutes: number;
+  mode: RoomMode;
   created_by_you?: boolean;
 }
 
@@ -190,12 +195,16 @@ interface State {
   setSoundEnabled: (enabled: boolean) => void;
   logStudySession: (minutes: number, roomId: string | null) => { xp: number; newBadges: string[] };
   joinRoom: (roomId: string) => { newBadges: string[] };
+  joinRoomByCode: (code: string) => { room: Room | null; newBadges: string[] };
   createRoom: (input: {
     name: string;
     subject: string;
     emoji: string;
     timerMinutes: number;
+    breakMinutes?: number;
+    mode?: RoomMode;
   }) => { room: Room; newBadges: string[] };
+  endRoomSession: (roomId: string) => void;
   postCheer: (roomId: string, text: string, kind?: RoomMessage["kind"]) => void;
   addFriend: (name: string) => Friend | null;
   resetDemo: () => void;
@@ -204,6 +213,7 @@ interface State {
 const seedRooms = (): Room[] => [
   {
     id: "math-cram",
+    code: "MATH01",
     name: "Math Cram",
     subject: "MATH 210",
     emoji: "📐",
@@ -214,9 +224,12 @@ const seedRooms = (): Room[] => [
     ],
     active_timer_started_at: null,
     active_timer_minutes: 25,
+    break_minutes: 5,
+    mode: "pomodoro",
   },
   {
     id: "late-coders",
+    code: "CODE02",
     name: "Late Night Coders",
     subject: "CS 240",
     emoji: "💻",
@@ -226,9 +239,12 @@ const seedRooms = (): Room[] => [
     ],
     active_timer_started_at: null,
     active_timer_minutes: 50,
+    break_minutes: 10,
+    mode: "animedoro",
   },
   {
     id: "lit-circle",
+    code: "LIT003",
     name: "Lit Circle",
     subject: "ENG 110",
     emoji: "📖",
@@ -240,6 +256,8 @@ const seedRooms = (): Room[] => [
     ],
     active_timer_started_at: null,
     active_timer_minutes: 25,
+    break_minutes: 5,
+    mode: "pomodoro",
   },
 ];
 
@@ -490,7 +508,8 @@ export const useGame = create<State>()(
       },
 
       logStudySession: (minutes, roomId) => {
-        const xp = Math.max(5, Math.floor(minutes) * 1); // 1 XP per minute, min 5
+        // 15 XP per 30 minutes (i.e. 0.5 XP per minute), min 5
+        const xp = Math.max(5, Math.round(minutes * 0.5));
         const now = new Date();
         const startedAt = new Date(now.getTime() - minutes * 60000).toISOString();
         const today = todayKey(now);
@@ -526,22 +545,60 @@ export const useGame = create<State>()(
         return { newBadges };
       },
 
-      createRoom: ({ name, subject, emoji, timerMinutes }) => {
+      joinRoomByCode: (code) => {
+        const normalized = code.trim().toUpperCase();
+        const room = get().rooms.find((r) => r.code === normalized) ?? null;
+        const newBadges: string[] = [];
+        if (room && get().unlockBadgeIfNeeded("study_squad")) newBadges.push("study_squad");
+        return { room, newBadges };
+      },
+
+      createRoom: ({ name, subject, emoji, timerMinutes, breakMinutes, mode }) => {
         const id = `r-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+        // 6-char alphanumeric code (uppercase, no ambiguous chars)
+        const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        const genCode = () =>
+          Array.from({ length: 6 }, () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)]).join("");
+        let code = genCode();
+        const existing = new Set(get().rooms.map((r) => r.code));
+        while (existing.has(code)) code = genCode();
+        const resolvedMode: RoomMode = mode ?? "pomodoro";
+        const defaultBreak = resolvedMode === "animedoro" ? 10 : 5;
         const room: Room = {
           id,
+          code,
           name: name.trim().slice(0, 40) || "My Study Room",
           subject: subject.trim().slice(0, 30) || "General",
           emoji: emoji || "🎯",
           members: [],
           active_timer_started_at: null,
           active_timer_minutes: Math.max(5, Math.min(120, Math.round(timerMinutes))),
+          break_minutes: Math.max(1, Math.min(30, Math.round(breakMinutes ?? defaultBreak))),
+          mode: resolvedMode,
           created_by_you: true,
         };
         set((s) => ({ rooms: [room, ...s.rooms] }));
         const newBadges: string[] = [];
         if (get().unlockBadgeIfNeeded("room_host")) newBadges.push("room_host");
         return { room, newBadges };
+      },
+
+      endRoomSession: (roomId) => {
+        const msg: RoomMessage = {
+          id: crypto.randomUUID(),
+          room_id: roomId,
+          author: "System",
+          emoji: "🛎",
+          text: "Host ended the session — great work, party!",
+          kind: "system",
+          created_at: new Date().toISOString(),
+        };
+        set((s) => ({
+          rooms: s.rooms.map((r) =>
+            r.id === roomId ? { ...r, active_timer_started_at: null } : r,
+          ),
+          messages: [...s.messages, msg].slice(-200),
+        }));
       },
 
       postCheer: (roomId, text, kind = "cheer") => {
@@ -595,7 +652,7 @@ export const useGame = create<State>()(
     }),
     {
       name: "pixelquest-store",
-      version: 4,
+      version: 5,
       migrate: (persisted: unknown, version) => {
         const p = (persisted ?? {}) as Partial<State>;
         if (version < 4) {
@@ -610,10 +667,14 @@ export const useGame = create<State>()(
             })),
             xp_log: p.xp_log ?? {},
             sessions: p.sessions ?? [],
-            rooms: p.rooms?.length ? p.rooms : seedRooms(),
+            rooms: seedRooms(),
             messages: p.messages?.length ? p.messages : seedMessages(),
             friends: p.friends?.length ? p.friends : seedFriends(),
           } as State;
+        }
+        if (version < 5) {
+          // Re-seed rooms so they have code/break_minutes/mode fields
+          return { ...p, rooms: seedRooms() } as State;
         }
         return p as State;
       },

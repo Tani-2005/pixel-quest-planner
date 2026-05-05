@@ -44,7 +44,7 @@ function SoloFocus() {
           <div>
             <h1 className="font-pixel text-base text-pixel-cyan">Solo Focus</h1>
             <p className="font-pixel text-[8px] text-muted-foreground mt-2">
-              Earn 1 XP per focused minute · 60 min total unlocks Focus Master
+              Earn 15 XP per 30 focused minutes · 60 min total unlocks Focus Master
             </p>
           </div>
           <Link to="/study">

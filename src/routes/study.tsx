@@ -1,7 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { requireAuth } from "@/lib/auth-guard";
 import { HUD } from "@/components/HUD";
-import { useGame } from "@/lib/store";
+import { useGame, type RoomMode } from "@/lib/store";
 import { PixelButton } from "@/components/PixelButton";
 import { RoomCard } from "@/components/RoomCard";
 import { AmbientBackdrop } from "@/components/AmbientBackdrop";
@@ -26,21 +26,52 @@ export const Route = createFileRoute("/study")({
 });
 
 function StudyLobby() {
-  const { rooms, sessions, createRoom } = useGame();
+  const { rooms, sessions, createRoom, joinRoomByCode } = useGame();
   const fb = useGameFeedback();
+  const nav = useNavigate();
   const [createOpen, setCreateOpen] = useState(false);
+  const [joinCode, setJoinCode] = useState("");
+  const [joinError, setJoinError] = useState<string | null>(null);
 
   const totalMinutes = sessions.reduce((s, x) => s + x.minutes, 0);
   const todayMinutes = sessions
     .filter((s) => new Date(s.ended_at).toDateString() === new Date().toDateString())
     .reduce((s, x) => s + x.minutes, 0);
 
-  const handleCreate = (input: { name: string; subject: string; emoji: string; timerMinutes: number }) => {
+  const handleCreate = (input: {
+    name: string;
+    subject: string;
+    emoji: string;
+    timerMinutes: number;
+    breakMinutes: number;
+    mode: RoomMode;
+  }) => {
     const r = createRoom(input);
-    fb.pushToast({ id: crypto.randomUUID(), message: `🛠 Room "${r.room.name}" created!`, variant: "xp" });
+    fb.pushToast({
+      id: crypto.randomUUID(),
+      message: `🛠 Room "${r.room.name}" created! Code: ${r.room.code}`,
+      variant: "xp",
+    });
     if (r.newBadges.length) {
       fb.handleResult({ gainedXp: 0, leveledUp: false, newLevel: 0, newBadges: r.newBadges });
     }
+    nav({ to: "/study/room/$roomId", params: { roomId: r.room.id } });
+  };
+
+  const handleJoinByCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    setJoinError(null);
+    if (!joinCode.trim()) return;
+    const { room, newBadges } = joinRoomByCode(joinCode);
+    if (!room) {
+      setJoinError("No room with that code. Double-check and try again.");
+      return;
+    }
+    if (newBadges.length) {
+      fb.handleResult({ gainedXp: 0, leveledUp: false, newLevel: 0, newBadges });
+    }
+    setJoinCode("");
+    nav({ to: "/study/room/$roomId", params: { roomId: room.id } });
   };
 
   return (
@@ -54,7 +85,7 @@ function StudyLobby() {
           <div>
             <h1 className="font-pixel text-base md:text-lg text-pixel-cyan">Study Room</h1>
             <p className="font-pixel text-[8px] text-muted-foreground mt-2">
-              Focus solo or with your party · 1 XP per minute
+              Focus solo or with your party · 15 XP per 30 minutes
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -67,6 +98,36 @@ function StudyLobby() {
               </PixelButton>
             </Link>
           </div>
+        </div>
+
+        {/* join by code */}
+        <div className="bg-pixel-surface border-2 border-pixel-cyan shadow-pixel-cyan p-5 mb-8">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <h2 className="font-pixel text-xs text-pixel-cyan">🔑 Join by Code</h2>
+              <p className="font-pixel text-[8px] text-muted-foreground mt-2">
+                Got a 6-character room code from a friend? Drop it here.
+              </p>
+            </div>
+            <form onSubmit={handleJoinByCode} className="flex gap-2 flex-wrap">
+              <input
+                value={joinCode}
+                onChange={(e) => {
+                  setJoinCode(e.target.value.toUpperCase().slice(0, 6));
+                  setJoinError(null);
+                }}
+                placeholder="ABC123"
+                maxLength={6}
+                className="font-pixel text-sm tracking-[0.3em] uppercase bg-[oklch(0.14_0.06_295)] border-2 border-pixel-purple px-3 py-2 w-36 text-pixel-cyan focus:border-pixel-pink outline-none"
+              />
+              <PixelButton type="submit" variant="cyan" size="sm" disabled={joinCode.length < 4}>
+                Join →
+              </PixelButton>
+            </form>
+          </div>
+          {joinError && (
+            <p className="font-pixel text-[8px] text-pixel-red mt-3">⚠ {joinError}</p>
+          )}
         </div>
 
         {/* stats */}
