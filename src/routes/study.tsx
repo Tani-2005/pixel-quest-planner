@@ -1,7 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { requireAuth } from "@/lib/auth-guard";
 import { HUD } from "@/components/HUD";
-import { useGame } from "@/lib/store";
+import { useGame, type RoomMode } from "@/lib/store";
 import { PixelButton } from "@/components/PixelButton";
 import { RoomCard } from "@/components/RoomCard";
 import { AmbientBackdrop } from "@/components/AmbientBackdrop";
