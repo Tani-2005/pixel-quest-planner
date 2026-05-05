@@ -43,11 +43,12 @@ function RoomNotFound() {
 
 function RoomPage() {
   const { roomId } = Route.useParams();
-  const { rooms, user, joinRoom, logStudySession, messages, postCheer } = useGame();
+  const { rooms, user, joinRoom, logStudySession, messages, postCheer, endRoomSession } = useGame();
   const room = rooms.find((r) => r.id === roomId);
   const fb = useGameFeedback();
   const nav = useNavigate();
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<"link" | "code" | null>(null);
+  const [endSignal, setEndSignal] = useState(0);
 
   // join on mount
   useEffect(() => {
@@ -82,15 +83,29 @@ function RoomPage() {
   const inviteLink =
     typeof window !== "undefined" ? `${window.location.origin}/study/room/${room.id}` : `/study/room/${room.id}`;
 
-  const copyInvite = async () => {
+  const copy = async (kind: "link" | "code", value: string) => {
     try {
-      await navigator.clipboard.writeText(inviteLink);
-      setCopied(true);
-      fb.pushToast({ id: crypto.randomUUID(), message: "🔗 Invite link copied!", variant: "xp" });
-      setTimeout(() => setCopied(false), 1800);
+      await navigator.clipboard.writeText(value);
+      setCopied(kind);
+      fb.pushToast({
+        id: crypto.randomUUID(),
+        message: kind === "code" ? `🔑 Code ${value} copied!` : "🔗 Invite link copied!",
+        variant: "xp",
+      });
+      setTimeout(() => setCopied(null), 1800);
     } catch {
-      fb.pushToast({ id: crypto.randomUUID(), message: inviteLink, variant: "xp" });
+      fb.pushToast({ id: crypto.randomUUID(), message: value, variant: "xp" });
     }
+  };
+
+  const handleEndSession = () => {
+    endRoomSession(room.id);
+    setEndSignal((n) => n + 1);
+    fb.pushToast({
+      id: crypto.randomUUID(),
+      message: "🛎 Session ended — XP awarded for time focused.",
+      variant: "xp",
+    });
   };
 
   // mix the player into the member list
@@ -113,7 +128,10 @@ function RoomPage() {
             <div>
               <h1 className="font-pixel text-base text-pixel-cyan">{room.name}</h1>
               <p className="font-pixel text-[8px] text-muted-foreground mt-1">
-                {room.subject} · {allMembers.length} members
+                {room.subject} · {allMembers.length} members ·{" "}
+                <span className="text-pixel-pink uppercase">
+                  {room.mode === "animedoro" ? "🎬 Animedoro" : "🍅 Pomodoro"}
+                </span>
                 {room.created_by_you && (
                   <span className="ml-2 text-pixel-gold">· hosted by you</span>
                 )}
@@ -121,14 +139,25 @@ function RoomPage() {
             </div>
           </div>
           <div className="flex gap-2 flex-wrap">
-            <PixelButton variant="secondary" size="sm" onClick={copyInvite}>
-              {copied ? "✓ Copied" : "🔗 Invite"}
+            <button
+              type="button"
+              onClick={() => copy("code", room.code)}
+              className="font-pixel text-[10px] tracking-[0.25em] text-pixel-cyan border-2 border-pixel-cyan px-3 py-2 hover:bg-pixel-cyan hover:text-[oklch(0.18_0.08_295)] transition-colors"
+              title="Click to copy room code"
+            >
+              {copied === "code" ? "✓ COPIED" : `🔑 ${room.code}`}
+            </button>
+            <PixelButton variant="secondary" size="sm" onClick={() => copy("link", inviteLink)}>
+              {copied === "link" ? "✓ Copied" : "🔗 Invite Link"}
             </PixelButton>
-            <Link to="/study">
-              <PixelButton variant="ghost" size="sm" onClick={() => nav({ to: "/study" })}>
-                ← Leave
+            {room.created_by_you && (
+              <PixelButton variant="accent" size="sm" onClick={handleEndSession}>
+                🛎 End Session
               </PixelButton>
-            </Link>
+            )}
+            <PixelButton variant="ghost" size="sm" onClick={() => nav({ to: "/study" })}>
+              ← Leave
+            </PixelButton>
           </div>
         </div>
 
@@ -137,12 +166,15 @@ function RoomPage() {
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-pixel-surface border-2 border-pixel-pink shadow-pixel-pink p-8 relative">
               <div className="font-pixel text-[8px] text-muted-foreground mb-4 text-center">
-                SHARED FOCUS · everyone&apos;s timer
+                SHARED FOCUS · {room.active_timer_minutes}m / {room.break_minutes}m break
               </div>
               <PomodoroTimer
                 workMinutes={room.active_timer_minutes}
+                breakMinutes={room.break_minutes}
                 onSessionComplete={handleSession}
                 accent="pink"
+                endSignal={endSignal}
+                lockDurations
               />
             </div>
 
