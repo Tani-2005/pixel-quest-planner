@@ -26,21 +26,52 @@ export const Route = createFileRoute("/study")({
 });
 
 function StudyLobby() {
-  const { rooms, sessions, createRoom } = useGame();
+  const { rooms, sessions, createRoom, joinRoomByCode } = useGame();
   const fb = useGameFeedback();
+  const nav = useNavigate();
   const [createOpen, setCreateOpen] = useState(false);
+  const [joinCode, setJoinCode] = useState("");
+  const [joinError, setJoinError] = useState<string | null>(null);
 
   const totalMinutes = sessions.reduce((s, x) => s + x.minutes, 0);
   const todayMinutes = sessions
     .filter((s) => new Date(s.ended_at).toDateString() === new Date().toDateString())
     .reduce((s, x) => s + x.minutes, 0);
 
-  const handleCreate = (input: { name: string; subject: string; emoji: string; timerMinutes: number }) => {
+  const handleCreate = (input: {
+    name: string;
+    subject: string;
+    emoji: string;
+    timerMinutes: number;
+    breakMinutes: number;
+    mode: RoomMode;
+  }) => {
     const r = createRoom(input);
-    fb.pushToast({ id: crypto.randomUUID(), message: `🛠 Room "${r.room.name}" created!`, variant: "xp" });
+    fb.pushToast({
+      id: crypto.randomUUID(),
+      message: `🛠 Room "${r.room.name}" created! Code: ${r.room.code}`,
+      variant: "xp",
+    });
     if (r.newBadges.length) {
       fb.handleResult({ gainedXp: 0, leveledUp: false, newLevel: 0, newBadges: r.newBadges });
     }
+    nav({ to: "/study/room/$roomId", params: { roomId: r.room.id } });
+  };
+
+  const handleJoinByCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    setJoinError(null);
+    if (!joinCode.trim()) return;
+    const { room, newBadges } = joinRoomByCode(joinCode);
+    if (!room) {
+      setJoinError("No room with that code. Double-check and try again.");
+      return;
+    }
+    if (newBadges.length) {
+      fb.handleResult({ gainedXp: 0, leveledUp: false, newLevel: 0, newBadges });
+    }
+    setJoinCode("");
+    nav({ to: "/study/room/$roomId", params: { roomId: room.id } });
   };
 
   return (
