@@ -10,6 +10,10 @@ interface Props {
   breakMinutes?: number;
   onSessionComplete: (minutes: number) => void;
   accent?: "pink" | "cyan" | "gold";
+  /** When this counter increments, force-end the current session. */
+  endSignal?: number;
+  /** Hide the inline duration inputs (host controls only). */
+  lockDurations?: boolean;
 }
 
 const accentClasses = {
@@ -23,6 +27,8 @@ export function PomodoroTimer({
   breakMinutes: initialBreak = 5,
   onSessionComplete,
   accent = "pink",
+  endSignal = 0,
+  lockDurations = false,
 }: Props) {
   const [workMinutes, setWorkMinutes] = useState(initialWork);
   const [breakMinutes, setBreakMinutes] = useState(initialBreak);
@@ -30,6 +36,10 @@ export function PomodoroTimer({
   const [secondsLeft, setSecondsLeft] = useState(initialWork * 60);
   const [running, setRunning] = useState(false);
   const startedAtRef = useRef<number | null>(null);
+
+  // Sync external duration changes (host editing room timer)
+  useEffect(() => setWorkMinutes(initialWork), [initialWork]);
+  useEffect(() => setBreakMinutes(initialBreak), [initialBreak]);
 
   // reset when phase or durations change while not running
   useEffect(() => {
@@ -42,11 +52,9 @@ export function PomodoroTimer({
     const t = setInterval(() => {
       setSecondsLeft((s) => {
         if (s <= 1) {
-          // phase finished
           sfx.pomodoroEnd();
           if (phase === "work") {
-            const elapsed = workMinutes;
-            onSessionComplete(elapsed);
+            onSessionComplete(workMinutes);
             setPhase("break");
             startedAtRef.current = null;
             return breakMinutes * 60;
@@ -62,6 +70,22 @@ export function PomodoroTimer({
     return () => clearInterval(t);
   }, [running, phase, workMinutes, breakMinutes, onSessionComplete]);
 
+  // Host-driven end-of-session
+  const lastEndRef = useRef(endSignal);
+  useEffect(() => {
+    if (endSignal === lastEndRef.current) return;
+    lastEndRef.current = endSignal;
+    if (phase === "work") {
+      const total = workMinutes * 60;
+      const completed = Math.max(1, Math.floor((total - secondsLeft) / 60));
+      onSessionComplete(completed);
+    }
+    setRunning(false);
+    setPhase("work");
+    setSecondsLeft(workMinutes * 60);
+    startedAtRef.current = null;
+  }, [endSignal]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const toggle = () => {
     if (!running && startedAtRef.current === null) startedAtRef.current = Date.now();
     if (!running) sfx.pomodoroStart();
@@ -70,7 +94,6 @@ export function PomodoroTimer({
 
   const skip = () => {
     if (phase === "work" && running) {
-      // award partial
       const total = workMinutes * 60;
       const completed = Math.max(1, Math.floor((total - secondsLeft) / 60));
       onSessionComplete(completed);
