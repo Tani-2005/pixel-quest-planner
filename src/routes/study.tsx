@@ -85,7 +85,7 @@ function StudyLobby() {
           <div>
             <h1 className="font-pixel text-base md:text-lg text-pixel-cyan">Study Room</h1>
             <p className="font-pixel text-[8px] text-muted-foreground mt-2">
-              Focus solo or with your party · 1 XP per minute
+              Focus solo or with your party · 15 XP per 30 minutes
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
