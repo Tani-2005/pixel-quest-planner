@@ -60,14 +60,19 @@ export interface RoomMember {
   status: "focused" | "break" | "idle";
 }
 
+export type RoomMode = "pomodoro" | "animedoro";
+
 export interface Room {
   id: string;
+  code: string; // 6-char room code for join-by-code
   name: string;
   subject: string;
   emoji: string;
   members: RoomMember[];
   active_timer_started_at: string | null;
   active_timer_minutes: number;
+  break_minutes: number;
+  mode: RoomMode;
   created_by_you?: boolean;
 }
 
