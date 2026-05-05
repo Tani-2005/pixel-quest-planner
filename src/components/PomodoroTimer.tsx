@@ -152,34 +152,36 @@ export function PomodoroTimer({
         </PixelButton>
       </div>
 
-      <div className="mt-6 flex flex-wrap justify-center gap-4 font-pixel text-[8px] text-muted-foreground">
-        <label className="flex items-center gap-2">
-          Work
-          <input
-            type="number"
-            min={5}
-            max={90}
-            value={workMinutes}
-            onChange={(e) => setWorkMinutes(Math.max(5, parseInt(e.target.value) || 5))}
-            disabled={running}
-            className="w-12 bg-[oklch(0.14_0.06_295)] border border-pixel-purple px-1 py-0.5 text-foreground disabled:opacity-50"
-          />
-          min
-        </label>
-        <label className="flex items-center gap-2">
-          Break
-          <input
-            type="number"
-            min={1}
-            max={30}
-            value={breakMinutes}
-            onChange={(e) => setBreakMinutes(Math.max(1, parseInt(e.target.value) || 1))}
-            disabled={running}
-            className="w-12 bg-[oklch(0.14_0.06_295)] border border-pixel-purple px-1 py-0.5 text-foreground disabled:opacity-50"
-          />
-          min
-        </label>
-      </div>
+      {!lockDurations && (
+        <div className="mt-6 flex flex-wrap justify-center gap-4 font-pixel text-[8px] text-muted-foreground">
+          <label className="flex items-center gap-2">
+            Work
+            <input
+              type="number"
+              min={5}
+              max={120}
+              value={workMinutes}
+              onChange={(e) => setWorkMinutes(Math.max(5, parseInt(e.target.value) || 5))}
+              disabled={running}
+              className="w-12 bg-[oklch(0.14_0.06_295)] border border-pixel-purple px-1 py-0.5 text-foreground disabled:opacity-50"
+            />
+            min
+          </label>
+          <label className="flex items-center gap-2">
+            Break
+            <input
+              type="number"
+              min={1}
+              max={30}
+              value={breakMinutes}
+              onChange={(e) => setBreakMinutes(Math.max(1, parseInt(e.target.value) || 1))}
+              disabled={running}
+              className="w-12 bg-[oklch(0.14_0.06_295)] border border-pixel-purple px-1 py-0.5 text-foreground disabled:opacity-50"
+            />
+            min
+          </label>
+        </div>
+      )}
     </div>
   );
 }
