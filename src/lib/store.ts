@@ -209,6 +209,7 @@ interface State {
 const seedRooms = (): Room[] => [
   {
     id: "math-cram",
+    code: "MATH01",
     name: "Math Cram",
     subject: "MATH 210",
     emoji: "📐",
@@ -219,9 +220,12 @@ const seedRooms = (): Room[] => [
     ],
     active_timer_started_at: null,
     active_timer_minutes: 25,
+    break_minutes: 5,
+    mode: "pomodoro",
   },
   {
     id: "late-coders",
+    code: "CODE02",
     name: "Late Night Coders",
     subject: "CS 240",
     emoji: "💻",
@@ -231,9 +235,12 @@ const seedRooms = (): Room[] => [
     ],
     active_timer_started_at: null,
     active_timer_minutes: 50,
+    break_minutes: 10,
+    mode: "animedoro",
   },
   {
     id: "lit-circle",
+    code: "LIT003",
     name: "Lit Circle",
     subject: "ENG 110",
     emoji: "📖",
@@ -245,6 +252,8 @@ const seedRooms = (): Room[] => [
     ],
     active_timer_started_at: null,
     active_timer_minutes: 25,
+    break_minutes: 5,
+    mode: "pomodoro",
   },
 ];
 
