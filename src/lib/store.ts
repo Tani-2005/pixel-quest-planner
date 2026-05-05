@@ -195,12 +195,16 @@ interface State {
   setSoundEnabled: (enabled: boolean) => void;
   logStudySession: (minutes: number, roomId: string | null) => { xp: number; newBadges: string[] };
   joinRoom: (roomId: string) => { newBadges: string[] };
+  joinRoomByCode: (code: string) => { room: Room | null; newBadges: string[] };
   createRoom: (input: {
     name: string;
     subject: string;
     emoji: string;
     timerMinutes: number;
+    breakMinutes?: number;
+    mode?: RoomMode;
   }) => { room: Room; newBadges: string[] };
+  endRoomSession: (roomId: string) => void;
   postCheer: (roomId: string, text: string, kind?: RoomMessage["kind"]) => void;
   addFriend: (name: string) => Friend | null;
   resetDemo: () => void;
