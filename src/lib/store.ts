@@ -652,7 +652,7 @@ export const useGame = create<State>()(
     }),
     {
       name: "pixelquest-store",
-      version: 4,
+      version: 5,
       migrate: (persisted: unknown, version) => {
         const p = (persisted ?? {}) as Partial<State>;
         if (version < 4) {
@@ -667,10 +667,14 @@ export const useGame = create<State>()(
             })),
             xp_log: p.xp_log ?? {},
             sessions: p.sessions ?? [],
-            rooms: p.rooms?.length ? p.rooms : seedRooms(),
+            rooms: seedRooms(),
             messages: p.messages?.length ? p.messages : seedMessages(),
             friends: p.friends?.length ? p.friends : seedFriends(),
           } as State;
+        }
+        if (version < 5) {
+          // Re-seed rooms so they have code/break_minutes/mode fields
+          return { ...p, rooms: seedRooms() } as State;
         }
         return p as State;
       },
