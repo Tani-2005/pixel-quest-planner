@@ -508,7 +508,8 @@ export const useGame = create<State>()(
       },
 
       logStudySession: (minutes, roomId) => {
-        const xp = Math.max(5, Math.floor(minutes) * 1); // 1 XP per minute, min 5
+        // 15 XP per 30 minutes (i.e. 0.5 XP per minute), min 5
+        const xp = Math.max(5, Math.round(minutes * 0.5));
         const now = new Date();
         const startedAt = new Date(now.getTime() - minutes * 60000).toISOString();
         const today = todayKey(now);
@@ -544,22 +545,60 @@ export const useGame = create<State>()(
         return { newBadges };
       },
 
-      createRoom: ({ name, subject, emoji, timerMinutes }) => {
+      joinRoomByCode: (code) => {
+        const normalized = code.trim().toUpperCase();
+        const room = get().rooms.find((r) => r.code === normalized) ?? null;
+        const newBadges: string[] = [];
+        if (room && get().unlockBadgeIfNeeded("study_squad")) newBadges.push("study_squad");
+        return { room, newBadges };
+      },
+
+      createRoom: ({ name, subject, emoji, timerMinutes, breakMinutes, mode }) => {
         const id = `r-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+        // 6-char alphanumeric code (uppercase, no ambiguous chars)
+        const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        const genCode = () =>
+          Array.from({ length: 6 }, () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)]).join("");
+        let code = genCode();
+        const existing = new Set(get().rooms.map((r) => r.code));
+        while (existing.has(code)) code = genCode();
+        const resolvedMode: RoomMode = mode ?? "pomodoro";
+        const defaultBreak = resolvedMode === "animedoro" ? 10 : 5;
         const room: Room = {
           id,
+          code,
           name: name.trim().slice(0, 40) || "My Study Room",
           subject: subject.trim().slice(0, 30) || "General",
           emoji: emoji || "🎯",
           members: [],
           active_timer_started_at: null,
           active_timer_minutes: Math.max(5, Math.min(120, Math.round(timerMinutes))),
+          break_minutes: Math.max(1, Math.min(30, Math.round(breakMinutes ?? defaultBreak))),
+          mode: resolvedMode,
           created_by_you: true,
         };
         set((s) => ({ rooms: [room, ...s.rooms] }));
         const newBadges: string[] = [];
         if (get().unlockBadgeIfNeeded("room_host")) newBadges.push("room_host");
         return { room, newBadges };
+      },
+
+      endRoomSession: (roomId) => {
+        const msg: RoomMessage = {
+          id: crypto.randomUUID(),
+          room_id: roomId,
+          author: "System",
+          emoji: "🛎",
+          text: "Host ended the session — great work, party!",
+          kind: "system",
+          created_at: new Date().toISOString(),
+        };
+        set((s) => ({
+          rooms: s.rooms.map((r) =>
+            r.id === roomId ? { ...r, active_timer_started_at: null } : r,
+          ),
+          messages: [...s.messages, msg].slice(-200),
+        }));
       },
 
       postCheer: (roomId, text, kind = "cheer") => {
