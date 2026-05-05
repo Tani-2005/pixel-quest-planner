@@ -100,6 +100,36 @@ function StudyLobby() {
           </div>
         </div>
 
+        {/* join by code */}
+        <div className="bg-pixel-surface border-2 border-pixel-cyan shadow-pixel-cyan p-5 mb-8">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <h2 className="font-pixel text-xs text-pixel-cyan">🔑 Join by Code</h2>
+              <p className="font-pixel text-[8px] text-muted-foreground mt-2">
+                Got a 6-character room code from a friend? Drop it here.
+              </p>
+            </div>
+            <form onSubmit={handleJoinByCode} className="flex gap-2 flex-wrap">
+              <input
+                value={joinCode}
+                onChange={(e) => {
+                  setJoinCode(e.target.value.toUpperCase().slice(0, 6));
+                  setJoinError(null);
+                }}
+                placeholder="ABC123"
+                maxLength={6}
+                className="font-pixel text-sm tracking-[0.3em] uppercase bg-[oklch(0.14_0.06_295)] border-2 border-pixel-purple px-3 py-2 w-36 text-pixel-cyan focus:border-pixel-pink outline-none"
+              />
+              <PixelButton type="submit" variant="cyan" size="sm" disabled={joinCode.length < 4}>
+                Join →
+              </PixelButton>
+            </form>
+          </div>
+          {joinError && (
+            <p className="font-pixel text-[8px] text-pixel-red mt-3">⚠ {joinError}</p>
+          )}
+        </div>
+
         {/* stats */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-10">
           <Stat label="Today" value={`${todayMinutes}m`} accent="cyan" />
