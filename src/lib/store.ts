@@ -275,11 +275,11 @@ const seedMessages = (): RoomMessage[] => {
   const now = Date.now();
   const ago = (m: number) => new Date(now - m * 60000).toISOString();
   return [
-    { id: crypto.randomUUID(), room_id: "math-cram", author: "Aria", emoji: "🦊", text: "🎉 GG focus team!", kind: "cheer", created_at: ago(28) },
-    { id: crypto.randomUUID(), room_id: "math-cram", author: "Kenji", emoji: "🐼", text: "🔥", kind: "reaction", created_at: ago(22) },
-    { id: crypto.randomUUID(), room_id: "math-cram", author: "Lin", emoji: "🦉", text: "let's gooo 💪", kind: "cheer", created_at: ago(15) },
-    { id: crypto.randomUUID(), room_id: "late-coders", author: "Sam", emoji: "🐸", text: "⚡", kind: "reaction", created_at: ago(40) },
-    { id: crypto.randomUUID(), room_id: "late-coders", author: "Ria", emoji: "🐰", text: "💯 keep pushing", kind: "cheer", created_at: ago(12) },
+    { id: "seed-msg-math-aria", room_id: "math-cram", author: "Aria", emoji: "🦊", text: "🎉 GG focus team!", kind: "cheer", created_at: ago(28) },
+    { id: "seed-msg-math-kenji", room_id: "math-cram", author: "Kenji", emoji: "🐼", text: "🔥", kind: "reaction", created_at: ago(22) },
+    { id: "seed-msg-math-lin", room_id: "math-cram", author: "Lin", emoji: "🦉", text: "let's gooo 💪", kind: "cheer", created_at: ago(15) },
+    { id: "seed-msg-coders-sam", room_id: "late-coders", author: "Sam", emoji: "🐸", text: "⚡", kind: "reaction", created_at: ago(40) },
+    { id: "seed-msg-coders-ria", room_id: "late-coders", author: "Ria", emoji: "🐰", text: "💯 keep pushing", kind: "cheer", created_at: ago(12) },
   ];
 };
 
