@@ -288,7 +288,7 @@ const seedTasks = (): Task[] => {
   const inDays = (d: number) => new Date(now.getTime() + d * 86400000).toISOString();
   return [
     {
-      id: crypto.randomUUID(),
+      id: "seed-task-linear-algebra",
       title: "Read Chapter 4 — Linear Algebra",
       type: "Homework",
       subject: "MATH 210",
@@ -303,7 +303,7 @@ const seedTasks = (): Task[] => {
       difficulty: "Medium",
     },
     {
-      id: crypto.randomUUID(),
+      id: "seed-task-cognitive-psych",
       title: "Midterm — Cognitive Psych",
       type: "Exam",
       subject: "PSY 301",
@@ -318,7 +318,7 @@ const seedTasks = (): Task[] => {
       difficulty: "Epic",
     },
     {
-      id: crypto.randomUUID(),
+      id: "seed-task-club-poster",
       title: "Plan club event poster",
       type: "Club Task",
       subject: "Design Club",
