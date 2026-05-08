@@ -271,17 +271,13 @@ const seedFriends = (): Friend[] => [
   { id: "f7", name: "Mira", emoji: "🐧", weekly_minutes: 95, weekly_xp: 140, online: false },
 ];
 
-const seedMessages = (): RoomMessage[] => {
-  const now = Date.now();
-  const ago = (m: number) => new Date(now - m * 60000).toISOString();
-  return [
-    { id: "seed-msg-math-aria", room_id: "math-cram", author: "Aria", emoji: "🦊", text: "🎉 GG focus team!", kind: "cheer", created_at: ago(28) },
-    { id: "seed-msg-math-kenji", room_id: "math-cram", author: "Kenji", emoji: "🐼", text: "🔥", kind: "reaction", created_at: ago(22) },
-    { id: "seed-msg-math-lin", room_id: "math-cram", author: "Lin", emoji: "🦉", text: "let's gooo 💪", kind: "cheer", created_at: ago(15) },
-    { id: "seed-msg-coders-sam", room_id: "late-coders", author: "Sam", emoji: "🐸", text: "⚡", kind: "reaction", created_at: ago(40) },
-    { id: "seed-msg-coders-ria", room_id: "late-coders", author: "Ria", emoji: "🐰", text: "💯 keep pushing", kind: "cheer", created_at: ago(12) },
-  ];
-};
+const seedMessages = (): RoomMessage[] => [
+  { id: "seed-msg-math-aria", room_id: "math-cram", author: "Aria", emoji: "🦊", text: "🎉 GG focus team!", kind: "cheer", created_at: "2026-05-08T12:32:00.000Z" },
+  { id: "seed-msg-math-kenji", room_id: "math-cram", author: "Kenji", emoji: "🐼", text: "🔥", kind: "reaction", created_at: "2026-05-08T12:38:00.000Z" },
+  { id: "seed-msg-math-lin", room_id: "math-cram", author: "Lin", emoji: "🦉", text: "let's gooo 💪", kind: "cheer", created_at: "2026-05-08T12:45:00.000Z" },
+  { id: "seed-msg-coders-sam", room_id: "late-coders", author: "Sam", emoji: "🐸", text: "⚡", kind: "reaction", created_at: "2026-05-08T12:20:00.000Z" },
+  { id: "seed-msg-coders-ria", room_id: "late-coders", author: "Ria", emoji: "🐰", text: "💯 keep pushing", kind: "cheer", created_at: "2026-05-08T12:48:00.000Z" },
+];
 
 const seedTasks = (): Task[] => {
   const now = new Date();
