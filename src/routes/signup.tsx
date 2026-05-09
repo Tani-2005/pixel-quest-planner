@@ -2,8 +2,6 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { PixelButton } from "@/components/PixelButton";
 import { useGame } from "@/lib/store";
-import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 
 export const Route = createFileRoute("/signup")({
   head: () => ({
@@ -26,49 +24,19 @@ function Signup() {
     e.preventDefault();
     setError(null);
     setInfo(null);
-    if (!username) return;
-    setLoading(true);
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
-        data: { username },
-      },
-    });
-    setLoading(false);
-    if (error) {
-      setError(error.message);
+    if (!username || !email || !password) {
+      setError("Please fill in all fields.");
       return;
     }
-    if (data.session) {
-      login(username);
-      navigate({ to: "/dashboard" });
-    } else {
-      setInfo("Check your email to confirm your account, then log in.");
-    }
+    setLoading(true);
+    // Local-only signup. Replace with real backend call later.
+    login(username);
+    setLoading(false);
+    navigate({ to: "/dashboard" });
   };
 
   const google = async () => {
-    setError(null);
-    setLoading(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: `${window.location.origin}/dashboard`,
-    });
-    if (result.error) {
-      setError(result.error.message ?? "Google sign-in failed");
-      setLoading(false);
-      return;
-    }
-    if (!("redirected" in result) || !result.redirected) {
-      const { data } = await supabase.auth.getUser();
-      const handle =
-        (data.user?.user_metadata?.full_name as string | undefined) ||
-        data.user?.email?.split("@")[0] ||
-        "Player";
-      login(handle);
-      navigate({ to: "/dashboard" });
-    }
+    setError("Social sign-in will be available once a backend is connected.");
   };
 
   return (

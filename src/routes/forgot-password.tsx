@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { PixelButton } from "@/components/PixelButton";
-import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/forgot-password")({
   head: () => ({ meta: [{ title: "Forgot Password — PixelQuest" }] }),
@@ -17,15 +16,14 @@ function ForgotPassword() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    setLoading(false);
-    if (error) {
-      setError(error.message);
+    if (!email) {
+      setError("Enter your email.");
       return;
     }
+    setLoading(true);
+    // Local-only stub. Replace with real backend call later.
+    await new Promise((r) => setTimeout(r, 300));
+    setLoading(false);
     setSent(true);
   };
 

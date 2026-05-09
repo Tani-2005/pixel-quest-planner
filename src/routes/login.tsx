@@ -2,8 +2,6 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { PixelButton } from "@/components/PixelButton";
 import { useGame } from "@/lib/store";
-import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -23,42 +21,20 @@ function Login() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setLoading(true);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    if (error) {
-      setError(error.message);
+    if (!email || !password) {
+      setError("Enter your email and password.");
       return;
     }
-    const handle =
-      (data.user?.user_metadata?.username as string | undefined) ||
-      data.user?.email?.split("@")[0] ||
-      "Player";
+    setLoading(true);
+    // Local-only login. Replace with real backend call later.
+    const handle = email.split("@")[0] || "Player";
     login(handle);
+    setLoading(false);
     navigate({ to: "/dashboard" });
   };
 
   const google = async () => {
-    setError(null);
-    setLoading(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: `${window.location.origin}/dashboard`,
-    });
-    if (result.error) {
-      setError(result.error.message ?? "Google sign-in failed");
-      setLoading(false);
-      return;
-    }
-    if (!("redirected" in result) || !result.redirected) {
-      // session set in popup mode
-      const { data } = await supabase.auth.getUser();
-      const handle =
-        (data.user?.user_metadata?.full_name as string | undefined) ||
-        data.user?.email?.split("@")[0] ||
-        "Player";
-      login(handle);
-      navigate({ to: "/dashboard" });
-    }
+    setError("Social sign-in will be available once a backend is connected.");
   };
 
   return (
