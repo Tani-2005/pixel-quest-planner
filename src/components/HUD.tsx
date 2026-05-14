@@ -13,7 +13,6 @@ export function HUD() {
   const tabs = [
     { to: "/dashboard", label: "Home" },
     { to: "/tasks", label: "Tasks" },
-    { to: "/study", label: "Study" },
     { to: "/leaderboard", label: "Ranks" },
     { to: "/friends", label: "Friends" },
     { to: "/badges", label: "Badges" },

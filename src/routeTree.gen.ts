@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TasksRouteImport } from './routes/tasks'
-import { Route as StudyRouteImport } from './routes/study'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -22,17 +21,10 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ChangelogRouteImport } from './routes/changelog'
 import { Route as BadgesRouteImport } from './routes/badges'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as StudySoloRouteImport } from './routes/study.solo'
-import { Route as StudyRoomRoomIdRouteImport } from './routes/study.room.$roomId'
 
 const TasksRoute = TasksRouteImport.update({
   id: '/tasks',
   path: '/tasks',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const StudyRoute = StudyRouteImport.update({
-  id: '/study',
-  path: '/study',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignupRoute = SignupRouteImport.update({
@@ -90,16 +82,6 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const StudySoloRoute = StudySoloRouteImport.update({
-  id: '/solo',
-  path: '/solo',
-  getParentRoute: () => StudyRoute,
-} as any)
-const StudyRoomRoomIdRoute = StudyRoomRoomIdRouteImport.update({
-  id: '/room/$roomId',
-  path: '/room/$roomId',
-  getParentRoute: () => StudyRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -113,10 +95,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
-  '/study': typeof StudyRouteWithChildren
   '/tasks': typeof TasksRoute
-  '/study/solo': typeof StudySoloRoute
-  '/study/room/$roomId': typeof StudyRoomRoomIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -130,10 +109,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
-  '/study': typeof StudyRouteWithChildren
   '/tasks': typeof TasksRoute
-  '/study/solo': typeof StudySoloRoute
-  '/study/room/$roomId': typeof StudyRoomRoomIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -148,10 +124,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
-  '/study': typeof StudyRouteWithChildren
   '/tasks': typeof TasksRoute
-  '/study/solo': typeof StudySoloRoute
-  '/study/room/$roomId': typeof StudyRoomRoomIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -167,10 +140,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/signup'
-    | '/study'
     | '/tasks'
-    | '/study/solo'
-    | '/study/room/$roomId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -184,10 +154,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/signup'
-    | '/study'
     | '/tasks'
-    | '/study/solo'
-    | '/study/room/$roomId'
   id:
     | '__root__'
     | '/'
@@ -201,10 +168,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/signup'
-    | '/study'
     | '/tasks'
-    | '/study/solo'
-    | '/study/room/$roomId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -219,7 +183,6 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
-  StudyRoute: typeof StudyRouteWithChildren
   TasksRoute: typeof TasksRoute
 }
 
@@ -230,13 +193,6 @@ declare module '@tanstack/react-router' {
       path: '/tasks'
       fullPath: '/tasks'
       preLoaderRoute: typeof TasksRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/study': {
-      id: '/study'
-      path: '/study'
-      fullPath: '/study'
-      preLoaderRoute: typeof StudyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signup': {
@@ -316,34 +272,8 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/study/solo': {
-      id: '/study/solo'
-      path: '/solo'
-      fullPath: '/study/solo'
-      preLoaderRoute: typeof StudySoloRouteImport
-      parentRoute: typeof StudyRoute
-    }
-    '/study/room/$roomId': {
-      id: '/study/room/$roomId'
-      path: '/room/$roomId'
-      fullPath: '/study/room/$roomId'
-      preLoaderRoute: typeof StudyRoomRoomIdRouteImport
-      parentRoute: typeof StudyRoute
-    }
   }
 }
-
-interface StudyRouteChildren {
-  StudySoloRoute: typeof StudySoloRoute
-  StudyRoomRoomIdRoute: typeof StudyRoomRoomIdRoute
-}
-
-const StudyRouteChildren: StudyRouteChildren = {
-  StudySoloRoute: StudySoloRoute,
-  StudyRoomRoomIdRoute: StudyRoomRoomIdRoute,
-}
-
-const StudyRouteWithChildren = StudyRoute._addFileChildren(StudyRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -357,7 +287,6 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
-  StudyRoute: StudyRouteWithChildren,
   TasksRoute: TasksRoute,
 }
 export const routeTree = rootRouteImport

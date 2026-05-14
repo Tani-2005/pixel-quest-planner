@@ -75,7 +75,7 @@ const TOUR_STEPS: TourStep[] = [
 ];
 
 function Dashboard() {
-  const { user, tasks, badges, xp_log, sessions, completeTask, setDailyGoal } = useGame();
+  const { user, tasks, badges, xp_log, completeTask, setDailyGoal } = useGame();
   const pet = petStage(user.level);
   const fb = useGameFeedback();
   useGlobalNavShortcuts();
@@ -205,7 +205,6 @@ function Dashboard() {
                   : "The map is clear — perfect time to plan a new quest."}
               </p>
 
-              {/* Quick action strip */}
               <div
                 className="mt-5 flex flex-wrap items-center gap-2"
                 data-tour="quick-actions"
@@ -213,16 +212,6 @@ function Dashboard() {
                 <Link to="/tasks">
                   <PixelButton variant="accent" size="sm">
                     + New Quest
-                  </PixelButton>
-                </Link>
-                <Link to="/study/solo">
-                  <PixelButton variant="cyan" size="sm">
-                    ▶ Solo Focus
-                  </PixelButton>
-                </Link>
-                <Link to="/study">
-                  <PixelButton variant="secondary" size="sm">
-                    Join Room
                   </PixelButton>
                 </Link>
               </div>
@@ -302,11 +291,9 @@ function Dashboard() {
             <h3 className="font-pixel text-xs text-pixel-cyan mb-5">Pixel Companion</h3>
             <PetEvolution level={user.level} totalXp={user.total_xp} />
             <div className="mt-5 text-center">
-              <Link to="/study">
-                <span className="font-pixel text-[8px] text-pixel-cyan underline underline-offset-4 hover:text-pixel-pink transition-colors">
-                  Train in Study Room →
-                </span>
-              </Link>
+              <span className="font-pixel text-[8px] text-muted-foreground">
+                Keep training to evolve!
+              </span>
             </div>
           </section>
         </motion.div>
@@ -326,7 +313,7 @@ function Dashboard() {
             xpLog={xp_log}
             onSetGoal={setDailyGoal}
           />
-          <WeeklyRecapPanel xpLog={xp_log} sessions={sessions} tasks={tasks} />
+          <WeeklyRecapPanel xpLog={xp_log} tasks={tasks} />
         </motion.div>
 
         {/* Section: Trophies */}

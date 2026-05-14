@@ -1,16 +1,15 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { StudySession, Task } from "@/lib/store";
+import { Task } from "@/lib/store";
 
 interface Props {
   xpLog: Record<string, number>;
-  sessions: StudySession[];
   tasks: Task[];
 }
 
 const dayKey = (d: Date) => d.toISOString().slice(0, 10);
 
-export function WeeklyRecapPanel({ xpLog, sessions, tasks }: Props) {
+export function WeeklyRecapPanel({ xpLog, tasks }: Props) {
   const data = useMemo(() => {
     const now = new Date();
     const days: { key: string; label: string; xp: number }[] = [];
@@ -26,16 +25,14 @@ export function WeeklyRecapPanel({ xpLog, sessions, tasks }: Props) {
 
     const weekStart = new Date(now.getTime() - 6 * 86400000);
     weekStart.setHours(0, 0, 0, 0);
-    const focusMin = sessions
-      .filter((s) => new Date(s.ended_at).getTime() >= weekStart.getTime())
-      .reduce((sum, s) => sum + s.minutes, 0);
+
     const tasksDone = tasks.filter(
       (t) => t.completed_at && new Date(t.completed_at).getTime() >= weekStart.getTime(),
     ).length;
     const bestDay = [...days].sort((a, b) => b.xp - a.xp)[0];
 
-    return { days, max, weeklyXp, focusMin, tasksDone, bestDay };
-  }, [xpLog, sessions, tasks]);
+    return { days, max, weeklyXp, tasksDone, bestDay };
+  }, [xpLog, tasks]);
 
   return (
     <section className="bg-pixel-surface border-2 border-pixel-gold shadow-pixel-gold p-6">
@@ -64,9 +61,8 @@ export function WeeklyRecapPanel({ xpLog, sessions, tasks }: Props) {
           })}
         </div>
 
-        <div className="grid grid-cols-3 md:grid-cols-1 gap-3 md:min-w-[140px]">
+        <div className="grid grid-cols-2 gap-3 md:min-w-[140px]">
           <Mini label="Total XP" value={data.weeklyXp} accent="text-pixel-gold" />
-          <Mini label="Focus min" value={data.focusMin} accent="text-pixel-cyan" />
           <Mini label="Tasks done" value={data.tasksDone} accent="text-pixel-pink" />
         </div>
       </div>

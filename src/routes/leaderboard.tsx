@@ -17,14 +17,7 @@ export const Route = createFileRoute("/leaderboard")({
 });
 
 function Leaderboard() {
-  const { friends, sessions, user } = useGame();
-
-  const myWeeklyMinutes = useMemo(() => {
-    const weekAgo = Date.now() - 7 * 86400000;
-    return sessions
-      .filter((s) => new Date(s.ended_at).getTime() >= weekAgo)
-      .reduce((sum, s) => sum + s.minutes, 0);
-  }, [sessions]);
+  const { friends, user } = useGame();
 
   const ranked = useMemo(() => {
     const entries = [
@@ -32,7 +25,6 @@ function Leaderboard() {
         id: "me",
         name: user.username || "You",
         emoji: user.avatar_emoji || "🧙",
-        minutes: myWeeklyMinutes,
         xp: user.weekly_xp,
         you: true,
       },
@@ -40,15 +32,14 @@ function Leaderboard() {
         id: f.id,
         name: f.name,
         emoji: f.emoji,
-        minutes: f.weekly_minutes,
         xp: f.weekly_xp,
         you: false,
       })),
     ];
-    return entries.sort((a, b) => b.minutes - a.minutes);
-  }, [friends, myWeeklyMinutes, user.username, user.avatar_emoji, user.weekly_xp]);
+    return entries.sort((a, b) => b.xp - a.xp);
+  }, [friends, user.username, user.avatar_emoji, user.weekly_xp]);
 
-  const top = ranked[0]?.minutes || 1;
+  const top = ranked[0]?.xp || 1;
 
   return (
     <div className="min-h-screen bg-background pixel-grid-bg pb-20 md:pb-8">
@@ -58,17 +49,17 @@ function Leaderboard() {
           <div>
             <h1 className="font-pixel text-base md:text-lg text-pixel-pink">🏆 Leaderboard</h1>
             <p className="font-pixel text-[8px] text-muted-foreground mt-2">
-              This week · ranked by focus minutes
+              This week · ranked by XP
             </p>
           </div>
           <div className="font-pixel text-[10px] bg-pixel-gold text-[oklch(0.18_0.08_295)] px-3 py-2 border-2 border-pixel-purple">
-            YOU · {myWeeklyMinutes}m
+            YOU · {user.weekly_xp} XP
           </div>
         </div>
 
         <div className="space-y-2">
           {ranked.map((r, i) => {
-            const pct = Math.max(4, Math.round((r.minutes / top) * 100));
+            const pct = Math.max(4, Math.round((r.xp / top) * 100));
             const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`;
             return (
               <motion.div
@@ -89,11 +80,8 @@ function Leaderboard() {
                         {r.name}{" "}
                         {r.you && <span className="font-pixel text-[8px] text-pixel-pink">(you)</span>}
                       </div>
-                      <div className="font-pixel text-[8px] text-muted-foreground mt-1">
-                        {r.xp} XP this week
-                      </div>
                     </div>
-                    <div className="font-pixel text-xs text-pixel-cyan">{r.minutes}m</div>
+                    <div className="font-pixel text-xs text-pixel-cyan">{r.xp} XP</div>
                   </div>
                   <div className="h-2 bg-[oklch(0.14_0.06_295)] border border-pixel-purple mt-2 overflow-hidden">
                     <motion.div
