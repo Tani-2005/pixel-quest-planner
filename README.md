@@ -2,6 +2,7 @@
   <!-- TODO: Replace with an actual logo or banner image -->
   <h1>👾 PixelQuest Planner</h1>
   <p><strong>A Gamified Full-Stack Productivity App</strong></p>
+  <img width="1897" height="859" alt="Screenshot 2026-05-16 083755" src="https://github.com/user-attachments/assets/bec8c01b-407e-4495-972d-da64e00798f0" />
 
   <!-- Badges -->
   <p>
