@@ -44,7 +44,7 @@ This project was built to demonstrate proficiency in modern **MERN stack** (Mong
     <tr>
       <td align="center">
         <!-- Replace this src with your actual image path later, e.g., docs/dashboard.png -->
-        <img src="https://via.placeholder.com/400x250/2b2b2b/FFFFFF?text=Dashboard+Screenshot" alt="Dashboard View" width="400"/>
+        <img width="1871" height="872" alt="Screenshot 2026-05-16 083506" src="https://github.com/user-attachments/assets/57617733-8486-4892-9db4-0b6f1718f5ad" />
         <br />
         <em>The main dashboard and pixel companion</em>
       </td>
