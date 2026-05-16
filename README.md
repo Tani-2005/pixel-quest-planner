@@ -55,21 +55,11 @@ This project was built to demonstrate proficiency in modern **MERN stack** (Mong
         <!-- Replace this src with your actual image path later, e.g., docs/quests.png -->
         <img width="1894" height="867" alt="Screenshot 2026-05-16 083307" src="https://github.com/user-attachments/assets/2f473927-7554-41bc-a909-375155e675f7" />
         <img width="1891" height="861" alt="Screenshot 2026-05-16 083331" src="https://github.com/user-attachments/assets/7d325801-a8ca-40a5-a313-fac9c21f711b" />
-        <br />
-        <em>Managing daily quests</em>
-      </td>
-      <td align="center">
-        <!-- Replace this src with your actual image path later, e.g., docs/quests.png -->
         <img width="1897" height="775" alt="Screenshot 2026-05-16 083403" src="https://github.com/user-attachments/assets/d9fe76be-48a6-495d-b26b-323dcf451cbe" />
+         <img width="1889" height="858" alt="Screenshot 2026-05-16 083428" src="https://github.com/user-attachments/assets/0c14a216-30d7-4e63-807a-07ebe3fca0ec" />
         <br />
-        <em>Leadership Board</em>
-      </td>
-      <td align="center">
-        <!-- Replace this src with your actual image path later, e.g., docs/quests.png -->
-        <img width="1889" height="858" alt="Screenshot 2026-05-16 083428" src="https://github.com/user-attachments/assets/0c14a216-30d7-4e63-807a-07ebe3fca0ec" />
         <br />
-        <em>Friends</em>
-      </td>
+        <em>Managing daily quests, Leadership board and Friends</em>
       <td align="center">
         <!-- Replace this src with your actual image path later, e.g., docs/quests.png -->
         <img width="1692" height="822" alt="Screenshot 2026-05-16 083437" src="https://github.com/user-attachments/assets/a596df60-d160-4235-87d4-cfd4dbd8f3c1" />
