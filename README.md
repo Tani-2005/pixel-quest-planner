@@ -44,15 +44,50 @@ This project was built to demonstrate proficiency in modern **MERN stack** (Mong
     <tr>
       <td align="center">
         <!-- Replace this src with your actual image path later, e.g., docs/dashboard.png -->
-        <img width="1871" height="872" alt="Screenshot 2026-05-16 083506" src="https://github.com/user-attachments/assets/57617733-8486-4892-9db4-0b6f1718f5ad" />
+        <img width="1903" height="850" alt="Screenshot 2026-05-16 083133" src="https://github.com/user-attachments/assets/6e2a8d7e-527e-4f99-b3c9-ebe687ccc53b" />
+        <img width="1887" height="799" alt="Screenshot 2026-05-16 083148" src="https://github.com/user-attachments/assets/feff4841-1f7c-49c6-9b42-f78cf7c77673" />
+        <img width="1886" height="768" alt="Screenshot 2026-05-16 083348" src="https://github.com/user-attachments/assets/b862ea34-c5c3-47b3-b791-8123db22fd03" />
+        <img width="1896" height="736" alt="Screenshot 2026-05-16 083215" src="https://github.com/user-attachments/assets/2c50de2b-3d22-44c8-bed1-f559c0d87edb" />
         <br />
         <em>The main dashboard and pixel companion</em>
       </td>
       <td align="center">
         <!-- Replace this src with your actual image path later, e.g., docs/quests.png -->
-        <img src="https://via.placeholder.com/400x250/2b2b2b/FFFFFF?text=Quests+Screenshot" alt="Quests View" width="400"/>
+        <img width="1894" height="867" alt="Screenshot 2026-05-16 083307" src="https://github.com/user-attachments/assets/2f473927-7554-41bc-a909-375155e675f7" />
+        <img width="1891" height="861" alt="Screenshot 2026-05-16 083331" src="https://github.com/user-attachments/assets/7d325801-a8ca-40a5-a313-fac9c21f711b" />
         <br />
         <em>Managing daily quests</em>
+      </td>
+      <td align="center">
+        <!-- Replace this src with your actual image path later, e.g., docs/quests.png -->
+        <img width="1897" height="775" alt="Screenshot 2026-05-16 083403" src="https://github.com/user-attachments/assets/d9fe76be-48a6-495d-b26b-323dcf451cbe" />
+        <br />
+        <em>Leadership Board</em>
+      </td>
+      <td align="center">
+        <!-- Replace this src with your actual image path later, e.g., docs/quests.png -->
+        <img width="1889" height="858" alt="Screenshot 2026-05-16 083428" src="https://github.com/user-attachments/assets/0c14a216-30d7-4e63-807a-07ebe3fca0ec" />
+        <br />
+        <em>Friends</em>
+      </td>
+      <td align="center">
+        <!-- Replace this src with your actual image path later, e.g., docs/quests.png -->
+        <img width="1692" height="822" alt="Screenshot 2026-05-16 083437" src="https://github.com/user-attachments/assets/a596df60-d160-4235-87d4-cfd4dbd8f3c1" />
+        <br />
+        <em>Badges</em>
+      </td>
+      <td align="center">
+        <!-- Replace this src with your actual image path later, e.g., docs/quests.png -->
+        <img width="1871" height="872" alt="Screenshot 2026-05-16 083506" src="https://github.com/user-attachments/assets/8618bfc1-af9b-4401-abea-a9a7b52b86ea" />
+        <img width="1855" height="847" alt="Screenshot 2026-05-16 083525" src="https://github.com/user-attachments/assets/4c1fadf5-7da7-408d-8484-c83b580dd944" />
+        <br />
+        <em>Settings</em>
+      </td>
+      <td align="center">
+        <!-- Replace this src with your actual image path later, e.g., docs/quests.png -->
+        <img width="1869" height="831" alt="Screenshot 2026-05-16 083612" src="https://github.com/user-attachments/assets/0362f41d-1ab1-4785-a882-c06760f739d8" />
+        <br />
+        <em>Level-up Frame</em>
       </td>
     </tr>
   </table>
