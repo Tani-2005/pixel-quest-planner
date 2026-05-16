@@ -36,7 +36,7 @@ This project was built to demonstrate proficiency in modern **MERN stack** (Mong
 
 ## 📸 Screenshots
 
-> **Note to Self/Recruiters:** The screenshots showcasing the retro UI and gamified features are coming soon!
+> *The screenshots showcasing the retro UI and gamified features*
 
 <div align="center">
   <!-- Placeholders for frame pics to be added later -->
