@@ -88,8 +88,9 @@ This project was built to demonstrate proficiency in modern **MERN stack** (Mong
       <td align="center">
         <!-- Replace this src with your actual image path later, e.g., docs/quests.png -->
         <img width="1692" height="822" alt="Screenshot 2026-05-16 083437" src="https://github.com/user-attachments/assets/a596df60-d160-4235-87d4-cfd4dbd8f3c1" />
+         <img width="1869" height="831" alt="Screenshot 2026-05-16 083612" src="https://github.com/user-attachments/assets/0362f41d-1ab1-4785-a882-c06760f739d8" />
         <br />
-        <em>Badges</em>
+        <em>Badges and Level-up Frame</em>
       </td>
       <td align="center">
         <!-- Replace this src with your actual image path later, e.g., docs/quests.png -->
@@ -97,12 +98,6 @@ This project was built to demonstrate proficiency in modern **MERN stack** (Mong
         <img width="1855" height="847" alt="Screenshot 2026-05-16 083525" src="https://github.com/user-attachments/assets/4c1fadf5-7da7-408d-8484-c83b580dd944" />
         <br />
         <em>Settings</em>
-      </td>
-      <td align="center">
-        <!-- Replace this src with your actual image path later, e.g., docs/quests.png -->
-        <img width="1869" height="831" alt="Screenshot 2026-05-16 083612" src="https://github.com/user-attachments/assets/0362f41d-1ab1-4785-a882-c06760f739d8" />
-        <br />
-        <em>Level-up Frame</em>
       </td>
     </tr>
   </table>
